@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Providers;
+
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Auth;
+
+class AppServiceProvider extends ServiceProvider
+{
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        // Registrar ImageService
+        $this->app->singleton(\App\Services\ImageService::class, function ($app) {
+            return new \App\Services\ImageService();
+        });
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
+        // Configurar rutas de redirección para autenticación
+        $this->app['router']->middleware('auth')->group(function () {
+            // Configuración manejada por middleware
+        });
+    }
+}
