@@ -41,7 +41,7 @@ class Content extends Model
      */
     public function galeria()
     {
-        return $this->belongsTo(Galeria::class);
+        return $this->belongsTo(Gallery::class, 'galeria_id');
     }
 
     /**

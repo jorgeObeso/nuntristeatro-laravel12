@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\WebController;
+use App\Http\Controllers\GalleryController;
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\Admin\ContentAdminController;
 use App\Http\Controllers\Admin\MenuAdminController;
 use App\Http\Controllers\Admin\ImageConfigController;
+use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use Illuminate\Support\Facades\Route;
 
 // Ruta principal - redirección al idioma por defecto
@@ -24,6 +26,15 @@ Route::middleware(['locale'])->group(function () {
     Route::get('/{idioma}/noticias', [WebController::class, 'noticias'])
         ->where('idioma', '^(es|as)$')
         ->name('noticias');
+    
+    // Galerías
+    Route::get('/{idioma}/galerias', [GalleryController::class, 'index'])
+        ->where('idioma', '^(es|as)$')
+        ->name('galleries.index');
+    
+    Route::get('/{idioma}/galerias/{slug}', [GalleryController::class, 'show'])
+        ->where(['idioma' => '^(es|as)$', 'slug' => '[a-zA-Z0-9\-_]+'])
+        ->name('galleries.show');
     
     // Contenido dinámico
     Route::get('/{idioma}/{slug}', [WebController::class, 'contenido'])
@@ -66,6 +77,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         
         // Configuración de imágenes
         Route::resource('image-configs', ImageConfigController::class);
+        
+        // Gestión de galerías
+        Route::resource('galleries', AdminGalleryController::class);
+        Route::post('galleries/{gallery}/upload-images', [AdminGalleryController::class, 'uploadImages'])->name('galleries.upload-images');
+        Route::post('galleries/{gallery}/update-order', [AdminGalleryController::class, 'updateImageOrder'])->name('galleries.update-order');
+        Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'deleteImage'])->name('galleries.delete-image');
         
         // Upload de imágenes para TinyMCE
         Route::post('upload-image', [ContentAdminController::class, 'uploadImage'])->name('upload-image');

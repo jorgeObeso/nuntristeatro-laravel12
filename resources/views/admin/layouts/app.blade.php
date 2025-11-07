@@ -122,6 +122,31 @@
                             </ul>
                         </li>
 
+                        <!-- Galerías -->
+                        <li class="nav-item {{ request()->routeIs('admin.galleries.*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-images"></i>
+                                <p>
+                                    Galerías
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.galleries.index') }}" class="nav-link {{ request()->routeIs('admin.galleries.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Todas las Galerías</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.galleries.create') }}" class="nav-link {{ request()->routeIs('admin.galleries.create') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Nueva Galería</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <!-- Menús -->
                         <li class="nav-item {{ request()->routeIs('admin.menus.*') ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ request()->routeIs('admin.menus.*') ? 'active' : '' }}">
@@ -235,8 +260,8 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Bootstrap 4 -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 5 -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- AdminLTE App -->
     <script src="https://cdn.jsdelivr.net/npm/admin-lte@3.2/dist/js/adminlte.min.js"></script>
     <!-- TinyMCE (Self-hosted) -->

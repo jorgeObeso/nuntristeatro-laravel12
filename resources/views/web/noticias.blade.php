@@ -38,10 +38,12 @@
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="card news-card h-100">
                                 @if($noticia->imagen_portada)
-                                    <img src="{{ asset('storage/' . $noticia->imagen_portada) }}" 
-                                         class="card-img-top" 
-                                         alt="{{ $texto->imagen_portada_alt ?? $noticia->imagen_portada_alt ?? $texto->titulo ?? 'Noticia de ' . ($noticia->lugar ?? 'teatro') }}"
-                                         style="height: 250px; object-fit: cover;">
+                                    {!! responsive_image_html(
+                                        $noticia->imagen_portada, 
+                                        $texto->imagen_portada_alt ?? $noticia->imagen_portada_alt ?? $texto->titulo ?? 'Noticia de ' . ($noticia->lugar ?? 'teatro'),
+                                        'card-img-top',
+                                        'height: 250px; object-fit: cover;'
+                                    ) !!}
                                 @endif
                                 
                                 <div class="card-body d-flex flex-column">

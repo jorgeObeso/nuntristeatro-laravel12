@@ -7,7 +7,7 @@ use App\Models\Content;
 use App\Models\TextoIdioma;
 use App\Models\Idioma;
 use App\Models\TipoContenido;
-use App\Models\Galeria;
+use App\Models\Gallery;
 use App\Models\ImageConfig;
 use App\Services\ImageService;
 use Illuminate\Http\Request;
@@ -54,7 +54,7 @@ class ContentAdminController extends Controller
     {
         $idiomas = Idioma::where('activado', true)->get();
         $tiposContenido = TipoContenido::all();
-        $galerias = Galeria::all();
+        $galerias = Gallery::where('activa', true)->get();
         
         // Obtener configuraciones de imagen para todos los tipos de contenido
         $imageConfigs = ImageConfig::getActiveConfigs();
@@ -112,28 +112,28 @@ class ContentAdminController extends Controller
                 'orden' => $request->orden ?? 0,
             ]);
 
-            // Procesar y guardar imágenes usando el servicio inyectado
+            // Procesar y guardar imágenes usando el sistema responsive
             if ($request->hasFile('imagen')) {
-                $imagePath = $this->imageService->processAndSaveImage(
+                $result = $this->imageService->processAndSaveResponsiveImage(
                     $request->file('imagen'), 
                     $request->tipo_contenido, 
                     'imagen',
                     $content->id
                 );
-                if ($imagePath) {
-                    $content->update(['imagen' => $imagePath]);
+                if ($result && $result['success'] && $result['desktop']) {
+                    $content->update(['imagen' => $result['desktop']]);
                 }
             }
 
             if ($request->hasFile('imagen_portada')) {
-                $imagenPortadaPath = $this->imageService->processAndSaveImage(
+                $result = $this->imageService->processAndSaveResponsiveImage(
                     $request->file('imagen_portada'), 
                     $request->tipo_contenido, 
                     'imagen_portada',
                     $content->id
                 );
-                if ($imagenPortadaPath) {
-                    $content->update(['imagen_portada' => $imagenPortadaPath]);
+                if ($result && $result['success'] && $result['desktop']) {
+                    $content->update(['imagen_portada' => $result['desktop']]);
                 }
             }
 
@@ -201,7 +201,7 @@ class ContentAdminController extends Controller
         $content->load(['textos.idioma']);
         $idiomas = Idioma::where('activado', true)->get();
         $tiposContenido = TipoContenido::all();
-        $galerias = Galeria::all();
+        $galerias = Gallery::where('activa', true)->get();
         
         return view('admin.contents.edit', compact('content', 'idiomas', 'tiposContenido', 'galerias'));
     }
@@ -262,12 +262,13 @@ class ContentAdminController extends Controller
                 Storage::disk('public')->delete($content->imagen);
             }
             
-            $imagenPath = $this->imageService->processAndSaveImage(
+            $result = $this->imageService->processAndSaveResponsiveImage(
                 $request->file('imagen'),
                 $request->tipo_contenido,
                 'imagen',
                 $content->id
             );
+            $imagenPath = ($result && $result['success']) ? $result['desktop'] : $content->imagen;
         }
 
         // Procesar nueva imagen de portada
@@ -278,12 +279,13 @@ class ContentAdminController extends Controller
                 Storage::disk('public')->delete($content->imagen_portada);
             }
             
-            $imagenPortadaPath = $this->imageService->processAndSaveImage(
+            $result = $this->imageService->processAndSaveResponsiveImage(
                 $request->file('imagen_portada'),
                 $request->tipo_contenido,
                 'imagen_portada',
                 $content->id
             );
+            $imagenPortadaPath = ($result && $result['success']) ? $result['desktop'] : $content->imagen_portada;
         }
 
         // Actualizar el contenido principal

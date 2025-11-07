@@ -39,7 +39,8 @@
         <div class="card-body login-card-body">
             <p class="login-box-msg">Iniciar sesión en el panel de administración</p>
 
-            <form action="{{ route('login') }}" method="post">
+            {{-- Formulario de login actualizado --}}
+            <form action="{{ route('admin.login.post') }}" method="post">
                 @csrf
                 
                 <div class="input-group mb-3">
@@ -91,9 +92,9 @@
                 </div>
             </form>
 
-            <p class="mb-1">
+            {{-- <p class="mb-1">
                 <a href="{{ route('password.request') }}">Olvidé mi contraseña</a>
-            </p>
+            </p> --}}
             
             <!-- Información de acceso de ejemplo -->
             <div class="alert alert-info mt-3">

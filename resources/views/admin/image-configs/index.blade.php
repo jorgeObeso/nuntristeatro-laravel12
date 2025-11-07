@@ -44,7 +44,8 @@
                                 <thead>
                                     <tr>
                                         <th>Tipo de Imagen</th>
-                                        <th>Dimensiones</th>
+                                        <th>Desktop</th>
+                                        <th>Móvil</th>
                                         <th>Formato</th>
                                         <th>Calidad</th>
                                         <th>Opciones</th>
@@ -59,11 +60,25 @@
                                                 <span class="badge badge-info">
                                                     {{ ucfirst(str_replace('_', ' ', $config->tipo_imagen)) }}
                                                 </span>
+                                                @if($config->descripcion)
+                                                    <br><small class="text-muted">{{ $config->descripcion }}</small>
+                                                @endif
                                             </td>
                                             <td>
-                                                {{ $config->ancho }} × {{ $config->alto }} px
+                                                <strong>{{ $config->ancho }} × {{ $config->alto }} px</strong>
                                                 @if($config->mantener_aspecto)
-                                                    <small class="text-muted">(mantener aspecto)</small>
+                                                    <br><small class="text-success">✓ Mantener aspecto</small>
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if($config->generar_version_movil)
+                                                    <strong>{{ $config->ancho_movil }} × {{ $config->alto_movil }} px</strong>
+                                                    @if($config->mantener_aspecto_movil)
+                                                        <br><small class="text-success">✓ Mantener aspecto</small>
+                                                    @endif
+                                                    <br><small class="text-info">Calidad: {{ $config->calidad_movil }}%</small>
+                                                @else
+                                                    <span class="text-muted">No generada</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -76,6 +91,9 @@
                                                 @if($config->redimensionar)
                                                     <span class="badge badge-success">Redimensionar</span>
                                                 @endif
+                                                @if($config->generar_version_movil)
+                                                    <br><span class="badge badge-info">Responsive</span>
+                                                @endif
                                             </td>
                                             <td>
                                                 @if($config->activo)
@@ -87,7 +105,8 @@
                                             <td>
                                                 <div class="btn-group">
                                                     <a href="{{ route('admin.image-configs.edit', $config) }}" 
-                                                       class="btn btn-sm btn-warning">
+                                                       class="btn btn-sm btn-warning"
+                                                       title="Editar configuración">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                     <form action="{{ route('admin.image-configs.destroy', $config) }}" 
@@ -96,7 +115,7 @@
                                                           onsubmit="return confirm('¿Estás seguro de eliminar esta configuración?')">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger">
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar">
                                                             <i class="fas fa-trash"></i>
                                                         </button>
                                                     </form>

@@ -14,20 +14,31 @@ class ImageConfig extends Model
         'tipo_imagen',
         'ancho',
         'alto',
+        'ancho_movil',
+        'alto_movil',
         'mantener_aspecto',
+        'mantener_aspecto_movil',
         'formato',
         'calidad',
+        'calidad_movil',
         'redimensionar',
+        'generar_version_movil',
         'activo',
+        'descripcion',
     ];
 
     protected $casts = [
         'mantener_aspecto' => 'boolean',
+        'mantener_aspecto_movil' => 'boolean',
         'redimensionar' => 'boolean',
+        'generar_version_movil' => 'boolean',
         'activo' => 'boolean',
         'ancho' => 'integer',
         'alto' => 'integer',
+        'ancho_movil' => 'integer',
+        'alto_movil' => 'integer',
         'calidad' => 'integer',
+        'calidad_movil' => 'integer',
     ];
 
     /**

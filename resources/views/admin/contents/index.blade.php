@@ -36,6 +36,7 @@
                         <option value="pagina" {{ request('tipo') == 'pagina' ? 'selected' : '' }}>Páginas</option>
                         <option value="noticia" {{ request('tipo') == 'noticia' ? 'selected' : '' }}>Noticias</option>
                         <option value="entrevista" {{ request('tipo') == 'entrevista' ? 'selected' : '' }}>Entrevistas</option>
+                        <option value="galeria" {{ request('tipo') == 'galeria' ? 'selected' : '' }}>Galerías</option>
                     </select>
                     <input type="text" name="search" class="form-control mr-2" placeholder="Buscar por título..." value="{{ request('search') }}">
                     <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i></button>
@@ -96,7 +97,8 @@
                                 <td>
                                     <span class="badge badge-{{ 
                                         $content->tipo_contenido == 'noticia' ? 'info' : 
-                                        ($content->tipo_contenido == 'pagina' ? 'success' : 'warning') 
+                                        ($content->tipo_contenido == 'pagina' ? 'success' : 
+                                        ($content->tipo_contenido == 'galeria' ? 'secondary' : 'warning'))
                                     }}">
                                         {{ ucfirst($content->tipo_contenido) }}
                                     </span>

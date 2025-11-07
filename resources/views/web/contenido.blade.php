@@ -35,11 +35,13 @@
             <!-- Contenido principal -->
             <div class="col-lg-8">
                 <article class="card">
-                    @if($contenido->imagen_portada)
-                        <img src="{{ asset('storage/' . $contenido->imagen_portada) }}" 
-                             class="card-img-top" 
-                             alt="{{ $texto->imagen_portada_alt ?? $contenido->imagen_portada_alt ?? $texto->titulo ?? 'Imagen de ' . ucfirst($contenido->tipo_contenido) }}"
-                             style="max-height: 400px; object-fit: cover; width: 100%;">
+                    @if($contenido->imagen)
+                        {!! responsive_image_html(
+                            $contenido->imagen, 
+                            $texto->imagen_alt ?? $contenido->imagen_alt ?? $texto->titulo ?? 'Imagen de ' . ucfirst($contenido->tipo_contenido),
+                            'card-img-top',
+                            'max-height: 400px; object-fit: cover; width: 100%;'
+                        ) !!}
                     @endif
                     
                     <div class="card-body">

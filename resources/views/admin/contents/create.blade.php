@@ -55,6 +55,7 @@
                                             <option value="pagina" {{ old('tipo_contenido') == 'pagina' ? 'selected' : '' }}>Página</option>
                                             <option value="noticia" {{ old('tipo_contenido') == 'noticia' ? 'selected' : '' }}>Noticia</option>
                                             <option value="entrevista" {{ old('tipo_contenido') == 'entrevista' ? 'selected' : '' }}>Entrevista</option>
+                                            <option value="galeria" {{ old('tipo_contenido') == 'galeria' ? 'selected' : '' }}>Galería</option>
                                         </select>
                                         @error('tipo_contenido')
                                             <span class="invalid-feedback">{{ $message }}</span>
