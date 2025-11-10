@@ -2,6 +2,10 @@
 
 @section('title', 'Galería: ' . $gallery->nombre)
 
+@push('head')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endpush
+
 @section('content')
 <div class="content-wrapper">
     <div class="content-header">
@@ -117,6 +121,12 @@
                                             <div class="image-overlay">
                                                 <div class="overlay-controls">
                                                     <button type="button" 
+                                                            class="btn btn-sm btn-primary me-1" 
+                                                            onclick="editImageTexts({{ $image->id }})"
+                                                            title="Editar textos">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" 
                                                             class="btn btn-sm btn-danger" 
                                                             onclick="deleteImage({{ $image->id }})"
                                                             title="Eliminar imagen">
@@ -155,6 +165,117 @@
         </div>
     </section>
 </div>
+
+<!-- Modal para editar textos multiidioma -->
+<div class="modal fade" id="editImageTextsModal" tabindex="-1" aria-labelledby="editImageTextsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editImageTextsModalLabel">
+                    <i class="fas fa-language"></i> Textos Multiidioma
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="imageTextsForm">
+                    @csrf
+                    <input type="hidden" id="imageId" name="image_id">
+                    
+                    <!-- Imagen preview -->
+                    <div class="text-center mb-4">
+                        <img id="modalImagePreview" src="" alt="" class="img-thumbnail" style="max-height: 150px;">
+                    </div>
+
+                    <!-- Tabs para idiomas -->
+                    <ul class="nav nav-tabs" id="languageTabsTexts" role="tablist">
+                        @foreach($idiomasActivos as $index => $idioma)
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {{ $index === 0 ? 'active' : '' }}" 
+                                        id="lang-{{ $idioma->id }}-tab" 
+                                        data-bs-toggle="tab" 
+                                        data-bs-target="#lang-{{ $idioma->id }}-text-pane" 
+                                        type="button" 
+                                        role="tab"
+                                        title="{{ $idioma->nombre }}">
+                                    @if($idioma->imagen)
+                                        <img src="{{ asset('storage/' . $idioma->imagen) }}" 
+                                             alt="{{ $idioma->nombre }}" 
+                                             style="width: 16px; height: 16px; object-fit: cover; margin-right: 5px;">
+                                    @endif
+                                    {{ strtoupper($idioma->etiqueta) }}
+                                    @if($idioma->es_principal)
+                                        <i class="fas fa-star text-warning ms-1" title="Idioma principal"></i>
+                                    @endif
+                                </button>
+                            </li>
+                        @endforeach
+                    </ul>
+
+                    <!-- Contenido de tabs -->
+                    <div class="tab-content mt-3" id="languageTabContent">
+                        @foreach($idiomasActivos as $index => $idioma)
+                            <div class="tab-pane fade {{ $index === 0 ? 'show active' : '' }}" 
+                                 id="lang-{{ $idioma->id }}-text-pane" 
+                                 role="tabpanel">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="form-group mb-3">
+                                            <label for="titulo_{{ $idioma->id }}" class="form-label">
+                                                <i class="fas fa-heading"></i> Título
+                                            </label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="titulo_{{ $idioma->id }}" 
+                                                   name="titulo[{{ $idioma->id }}]"
+                                                   placeholder="Título de la imagen en {{ $idioma->nombre }}">
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="descripcion_{{ $idioma->id }}" class="form-label">
+                                                <i class="fas fa-align-left"></i> Descripción
+                                            </label>
+                                            <textarea class="form-control" 
+                                                      id="descripcion_{{ $idioma->id }}" 
+                                                      name="descripcion[{{ $idioma->id }}]" 
+                                                      rows="3"
+                                                      placeholder="Descripción de la imagen en {{ $idioma->nombre }}"></textarea>
+                                        </div>
+
+                                        <div class="form-group mb-3">
+                                            <label for="alt_text_{{ $idioma->id }}" class="form-label">
+                                                <i class="fas fa-universal-access"></i> Texto Alternativo (ALT)
+                                                <small class="text-muted"> - Para accesibilidad</small>
+                                            </label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="alt_text_{{ $idioma->id }}" 
+                                                   name="alt_text[{{ $idioma->id }}]"
+                                                   placeholder="Texto alternativo en {{ $idioma->nombre }}"
+                                                   maxlength="255">
+                                            <small class="form-text text-info">
+                                                <i class="fas fa-info-circle"></i>
+                                                Este texto es crucial para usuarios con discapacidad visual y SEO.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancelar
+                </button>
+                <button type="button" class="btn btn-primary" onclick="saveImageTexts()">
+                    <i class="fas fa-save"></i> Guardar Textos
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 
 @section('styles')
@@ -1040,6 +1161,91 @@ window.testGallery = function() {
     console.log('🧪 Ejecutando pruebas...');
     testConnection();
 };
+
+// === FUNCIONES PARA EDICIÓN MULTIIDIOMA ===
+
+/**
+ * Abrir modal para editar textos multiidioma de una imagen
+ */
+function editImageTexts(imageId) {
+    console.log('🌐 Editando textos multiidioma para imagen:', imageId);
+    
+    // Obtener datos de la imagen
+    fetch(`/admin/gallery-images/${imageId}/texts`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Establecer ID de imagen
+                document.getElementById('imageId').value = imageId;
+                
+                // Mostrar preview de la imagen
+                const preview = document.getElementById('modalImagePreview');
+                preview.src = data.image.imagen_url;
+                preview.alt = data.image.alt_text || 'Imagen de galería';
+                
+                // Llenar campos por idioma
+                data.texts.forEach(text => {
+                    const tituloField = document.getElementById(`titulo_${text.idioma_id}`);
+                    const descripcionField = document.getElementById(`descripcion_${text.idioma_id}`);
+                    const altField = document.getElementById(`alt_text_${text.idioma_id}`);
+                    
+                    if (tituloField) tituloField.value = text.titulo || '';
+                    if (descripcionField) descripcionField.value = text.descripcion || '';
+                    if (altField) altField.value = text.alt_text || '';
+                });
+                
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('editImageTextsModal'));
+                modal.show();
+            } else {
+                alert('❌ Error al cargar datos: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error:', error);
+            alert('❌ Error al cargar textos de la imagen');
+        });
+}
+
+/**
+ * Guardar textos multiidioma de una imagen
+ */
+function saveImageTexts() {
+    const imageId = document.getElementById('imageId').value;
+    const formData = new FormData(document.getElementById('imageTextsForm'));
+    
+    console.log('💾 Guardando textos multiidioma para imagen:', imageId);
+    
+    fetch(`/admin/gallery-images/${imageId}/texts`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Textos guardados exitosamente');
+            
+            // Cerrar modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editImageTextsModal'));
+            modal.hide();
+            
+            // Mostrar mensaje de éxito
+            alert('✅ Textos guardados exitosamente');
+            
+            // Opcional: Recargar la página para ver los cambios
+            // window.location.reload();
+        } else {
+            alert('❌ Error al guardar: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error:', error);
+        alert('❌ Error al guardar textos');
+    });
+}
 
 console.log('💡 TIP: Puedes ejecutar testGallery() en la consola del navegador para probar la conexión');
 </script>

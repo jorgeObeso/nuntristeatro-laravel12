@@ -121,10 +121,10 @@
                                     <li class="nav-item" role="presentation">
                                         <a class="nav-link {{ $index == 0 ? 'active' : '' }}" 
                                            id="idioma-{{ $idioma->id }}-tab" 
-                                           data-toggle="tab" 
+                                           data-bs-toggle="tab" 
                                            href="#idioma-{{ $idioma->id }}" 
                                            role="tab">
-                                            {{ strtoupper($idioma->codigo) }} - {{ $idioma->nombre }}
+                                            {{ strtoupper($idioma->etiqueta) }} - {{ $idioma->nombre }}
                                         </a>
                                     </li>
                                 @endforeach
@@ -475,6 +475,30 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🌐 Configurando formulario de creación de contenidos');
+            
+            // Inicializar pestañas de Bootstrap
+            const triggerTabList = [].slice.call(document.querySelectorAll('#idiomasTabs a'));
+            triggerTabList.forEach(function (triggerEl) {
+                const tabTrigger = new bootstrap.Tab(triggerEl);
+                
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    tabTrigger.show();
+                    console.log('📋 Cambiando a pestaña:', triggerEl.textContent);
+                });
+            });
+
+            // Auto-generar slug cuando se escriba el título para cada idioma
+            @foreach($idiomas as $idioma)
+                const tituloField{{ $idioma->id }} = document.getElementById('textos_{{ $idioma->id }}_titulo');
+                if (tituloField{{ $idioma->id }}) {
+                    tituloField{{ $idioma->id }}.addEventListener('input', function() {
+                        generateSlug({{ $idioma->id }});
+                    });
+                }
+            @endforeach
+            
             // Actualizar información de imágenes cuando cambie el tipo de contenido
             document.getElementById('tipo_contenido').addEventListener('change', updateImageInfo);
             
@@ -485,6 +509,8 @@
             if (typeof window.initTinyMCE === 'function') {
                 window.initTinyMCE();
             }
+
+            console.log('✅ Formulario de creación configurado correctamente');
         });
     </script>
 @stop

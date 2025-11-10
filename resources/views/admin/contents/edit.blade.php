@@ -103,10 +103,10 @@
                                     <li class="nav-item" role="presentation">
                                         <a class="nav-link {{ $index == 0 ? 'active' : '' }}" 
                                            id="idioma-{{ $idioma->id }}-tab" 
-                                           data-toggle="tab" 
+                                           data-bs-toggle="tab" 
                                            href="#idioma-{{ $idioma->id }}" 
                                            role="tab">
-                                            {{ strtoupper($idioma->codigo) }} - {{ $idioma->nombre }}
+                                            {{ strtoupper($idioma->etiqueta) }} - {{ $idioma->nombre }}
                                         </a>
                                     </li>
                                 @endforeach
@@ -140,7 +140,7 @@
                                             <label for="textos_{{ $idioma->id }}_slug">URL Amigable (Slug)</label>
                                             <div class="input-group">
                                                 <div class="input-group-prepend">
-                                                    <span class="input-group-text">/{{ $idioma->codigo }}/</span>
+                                                    <span class="input-group-text">/{{ $idioma->etiqueta }}/</span>
                                                 </div>
                                                 <input type="text" 
                                                        name="textos[{{ $idioma->id }}][slug]" 
@@ -465,6 +465,8 @@
 
 @section('js')
     <script>
+        console.log('📝 Iniciando editor de contenidos');
+        
         // Función para generar slug desde el título
         function generateSlug(idiomaId) {
             const titulo = document.getElementById('textos_' + idiomaId + '_titulo').value;
@@ -481,19 +483,81 @@
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            // Configurar editor de texto rico para las áreas de contenido
-            @foreach($idiomas as $idioma)
-                CKEDITOR.replace('textos_{{ $idioma->id }}_contenido', {
-                    height: 300,
-                    toolbar: [
-                        ['Bold', 'Italic', 'Underline'],
-                        ['Link', 'Unlink'],
-                        ['NumberedList', 'BulletedList'],
-                        ['Blockquote', 'Format'],
-                        ['Source']
-                    ]
+            console.log('🌐 Configurando pestañas de idiomas');
+            
+            // Inicializar pestañas de Bootstrap
+            const triggerTabList = [].slice.call(document.querySelectorAll('#idiomasTabs a'));
+            triggerTabList.forEach(function (triggerEl) {
+                const tabTrigger = new bootstrap.Tab(triggerEl);
+                
+                triggerEl.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    tabTrigger.show();
+                    console.log('📋 Cambiando a pestaña:', triggerEl.textContent);
                 });
+            });
+
+            // Configurar TinyMCE para cada idioma
+            @foreach($idiomas as $idioma)
+                console.log('📄 Inicializando editor para idioma: {{ $idioma->nombre }}');
+                
+                // Configurar TinyMCE para el contenido
+                if (typeof tinymce !== 'undefined') {
+                    tinymce.init({
+                        selector: '#textos_{{ $idioma->id }}_contenido',
+                        height: 400,
+                        menubar: false,
+                        plugins: [
+                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                            'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                        ],
+                        toolbar: 'undo redo | formatselect | ' +
+                                'bold italic backcolor | alignleft aligncenter ' +
+                                'alignright alignjustify | bullist numlist outdent indent | ' +
+                                'removeformat | help',
+                        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                        language: 'es'
+                    });
+                }
+
+                // Auto-generar slug cuando se escriba el título
+                const tituloField = document.getElementById('textos_{{ $idioma->id }}_titulo');
+                if (tituloField) {
+                    tituloField.addEventListener('input', function() {
+                        generateSlug({{ $idioma->id }});
+                    });
+                }
             @endforeach
+
+            console.log('✅ Configuración de editores completada');
+        });
+
+        // Validación antes de enviar
+        document.querySelector('form').addEventListener('submit', function(e) {
+            console.log('📤 Enviando formulario de contenido');
+            
+            // Sincronizar contenido de TinyMCE
+            if (typeof tinymce !== 'undefined') {
+                tinymce.triggerSave();
+            }
+            
+            // Validar que al menos un idioma tenga título
+            let tieneTitulo = false;
+            @foreach($idiomas as $idioma)
+                const titulo{{ $idioma->id }} = document.getElementById('textos_{{ $idioma->id }}_titulo').value;
+                if (titulo{{ $idioma->id }}.trim() !== '') {
+                    tieneTitulo = true;
+                }
+            @endforeach
+            
+            if (!tieneTitulo) {
+                e.preventDefault();
+                alert('❌ Debes ingresar al menos un título en algún idioma');
+                return false;
+            }
+            
+            console.log('✅ Validación pasada, enviando formulario');
         });
     </script>
 @stop

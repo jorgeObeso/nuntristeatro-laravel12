@@ -67,31 +67,60 @@
                     <tbody>
                         @forelse($contents as $content)
                             @php
-                                $textoEs = $content->textos->where('idioma.codigo', 'es')->first();
+                                $idiomasActivos = \App\Models\Idioma::where('activo', true)->orderBy('orden')->get();
+                                $textoPrincipal = null;
+                                $todosLosTextos = collect();
+                                
+                                foreach($idiomasActivos as $idioma) {
+                                    $texto = $content->textos->where('idioma_id', $idioma->id)->first();
+                                    if ($texto) {
+                                        $todosLosTextos->push($texto);
+                                        if ($idioma->es_principal || !$textoPrincipal) {
+                                            $textoPrincipal = $texto;
+                                        }
+                                    }
+                                }
                             @endphp
                             <tr>
                                 <td>{{ $content->id }}</td>
                                 <td>
-                                    {{ $textoEs ? $textoEs->titulo : 'Sin título' }}
+                                    <strong>{{ $textoPrincipal ? $textoPrincipal->titulo : 'Sin título' }}</strong>
                                     @if($content->lugar)
-                                        <br><small class="text-muted">{{ $content->lugar }}</small>
+                                        <br><small class="text-muted">📍 {{ $content->lugar }}</small>
                                     @endif
+                                    
+                                    {{-- Mostrar idiomas disponibles --}}
+                                    <br>
+                                    <div class="mt-1">
+                                        @foreach($idiomasActivos as $idioma)
+                                            @php
+                                                $textoIdioma = $content->textos->where('idioma_id', $idioma->id)->first();
+                                            @endphp
+                                            @if($textoIdioma && $textoIdioma->titulo)
+                                                <span class="badge bg-success me-1" title="{{ $textoIdioma->titulo }}">
+                                                    {{ strtoupper($idioma->etiqueta) }}
+                                                </span>
+                                            @else
+                                                <span class="badge bg-secondary me-1" title="Sin contenido en {{ $idioma->nombre }}">
+                                                    {{ strtoupper($idioma->etiqueta) }}
+                                                </span>
+                                            @endif
+                                        @endforeach
+                                    </div>
                                 </td>
                                 <td>
-                                    @if($textoEs && $textoEs->slug)
-                                        <code>/es/{{ $textoEs->slug }}</code>
-                                        <br><small class="text-muted">
-                                            @php
-                                                $textoAs = $content->textos->where('idioma.codigo', 'as')->first();
-                                            @endphp
-                                            @if($textoAs && $textoAs->slug)
-                                                /as/{{ $textoAs->slug }}
-                                            @else
-                                                <span class="text-warning">Sin slug AS</span>
+                                    @if($todosLosTextos->isNotEmpty())
+                                        @foreach($todosLosTextos as $texto)
+                                            @if($texto->slug)
+                                                <code>/{{ $texto->idioma->etiqueta }}/{{ $texto->slug }}</code>
+                                                @if(!$loop->last)<br>@endif
                                             @endif
-                                        </small>
+                                        @endforeach
+                                        @if($todosLosTextos->where('slug', null)->isNotEmpty())
+                                            <br><small class="text-warning">Algunos idiomas sin slug</small>
+                                        @endif
                                     @else
-                                        <span class="text-muted">Sin slug</span>
+                                        <span class="text-muted">Sin URLs</span>
                                     @endif
                                 </td>
                                 <td>
@@ -111,7 +140,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($textoEs && $textoEs->visible)
+                                    @if($textoPrincipal && $textoPrincipal->visible)
                                         <span class="badge badge-success">Visible</span>
                                     @else
                                         <span class="badge badge-secondary">Oculto</span>

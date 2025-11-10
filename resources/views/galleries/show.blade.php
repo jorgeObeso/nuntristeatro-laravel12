@@ -89,7 +89,7 @@
                     <div class="image-wrapper">
                         <img src="{{ get_responsive_image_url('storage/' . $image->imagen, 'mobile') }}" 
                              data-full="{{ asset('storage/' . $image->imagen) }}"
-                             alt="{{ $image->titulo ?: $gallery->nombre . ' - Imagen ' . ($index + 1) }}"
+                             alt="{{ get_gallery_image_alt($image) }}"
                              class="gallery-image"
                              loading="lazy"
                              onclick="openLightbox({{ $index }})">

@@ -52,7 +52,7 @@ class ContentAdminController extends Controller
      */
     public function create()
     {
-        $idiomas = Idioma::where('activado', true)->get();
+        $idiomas = Idioma::where('activo', true)->get();
         $tiposContenido = TipoContenido::all();
         $galerias = Gallery::where('activa', true)->get();
         
@@ -199,7 +199,7 @@ class ContentAdminController extends Controller
     public function edit(Content $content)
     {
         $content->load(['textos.idioma']);
-        $idiomas = Idioma::where('activado', true)->get();
+        $idiomas = Idioma::where('activo', true)->get();
         $tiposContenido = TipoContenido::all();
         $galerias = Gallery::where('activa', true)->get();
         

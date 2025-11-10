@@ -70,7 +70,10 @@ class GalleryController extends Controller
             $query->orderBy('orden');
         }]);
 
-        return view('admin.galleries.show', compact('gallery'));
+        // Cargar idiomas activos para el modal de edición
+        $idiomasActivos = \App\Models\Idioma::where('activo', true)->orderBy('orden')->get();
+
+        return view('admin.galleries.show', compact('gallery', 'idiomasActivos'));
     }
 
     /**
@@ -278,6 +281,106 @@ class GalleryController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al eliminar la imagen: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener textos multiidioma de una imagen
+     */
+    public function getImageTexts(GalleryImage $image)
+    {
+        try {
+            $image->load(['texts.idioma', 'gallery']);
+            
+            // Obtener todos los idiomas activos
+            $idiomasActivos = \App\Models\Idioma::where('activo', true)->orderBy('orden')->get();
+            
+            // Preparar array de textos por idioma
+            $texts = [];
+            foreach ($idiomasActivos as $idioma) {
+                $text = $image->texts->where('idioma_id', $idioma->id)->first();
+                $texts[] = [
+                    'idioma_id' => $idioma->id,
+                    'titulo' => $text->titulo ?? '',
+                    'descripcion' => $text->descripcion ?? '',
+                    'alt_text' => $text->alt_text ?? ''
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'image' => [
+                    'id' => $image->id,
+                    'imagen_url' => asset('storage/' . $image->imagen),
+                    'alt_text' => $image->alt_text
+                ],
+                'texts' => $texts
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar textos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Guardar textos multiidioma de una imagen
+     */
+    public function saveImageTexts(Request $request, GalleryImage $image)
+    {
+        try {
+            $request->validate([
+                'titulo.*' => 'nullable|string|max:255',
+                'descripcion.*' => 'nullable|string',
+                'alt_text.*' => 'nullable|string|max:255'
+            ]);
+
+            $titulos = $request->input('titulo', []);
+            $descripciones = $request->input('descripcion', []);
+            $altTexts = $request->input('alt_text', []);
+            
+            // Obtener idiomas activos
+            $idiomasActivos = \App\Models\Idioma::where('activo', true)->get();
+            
+            foreach ($idiomasActivos as $idioma) {
+                $idiomaId = $idioma->id;
+                
+                // Buscar o crear el texto para este idioma
+                $imageText = $image->texts()->where('idioma_id', $idiomaId)->first();
+                
+                if (!$imageText) {
+                    $imageText = new \App\Models\GalleryImageText([
+                        'gallery_image_id' => $image->id,
+                        'idioma_id' => $idiomaId
+                    ]);
+                }
+                
+                // Actualizar campos
+                $imageText->titulo = $titulos[$idiomaId] ?? null;
+                $imageText->descripcion = $descripciones[$idiomaId] ?? null;
+                $imageText->alt_text = $altTexts[$idiomaId] ?? null;
+                
+                // Solo guardar si al menos un campo tiene contenido
+                if ($imageText->titulo || $imageText->descripcion || $imageText->alt_text) {
+                    $imageText->save();
+                } elseif ($imageText->exists) {
+                    // Eliminar si todos los campos están vacíos y el registro existe
+                    $imageText->delete();
+                }
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Textos guardados exitosamente.'
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al guardar textos: ' . $e->getMessage()
             ], 500);
         }
     }

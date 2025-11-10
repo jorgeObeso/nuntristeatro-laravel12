@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\ContentAdminController;
 use App\Http\Controllers\Admin\MenuAdminController;
 use App\Http\Controllers\Admin\ImageConfigController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
+use App\Http\Controllers\Admin\IdiomaController;
 use Illuminate\Support\Facades\Route;
 
 // Ruta principal - redirección al idioma por defecto
@@ -83,6 +84,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('galleries/{gallery}/upload-images', [AdminGalleryController::class, 'uploadImages'])->name('galleries.upload-images');
         Route::post('galleries/{gallery}/update-order', [AdminGalleryController::class, 'updateImageOrder'])->name('galleries.update-order');
         Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'deleteImage'])->name('galleries.delete-image');
+        
+        // Gestión de textos multiidioma para imágenes de galería
+        Route::get('gallery-images/{image}/texts', [AdminGalleryController::class, 'getImageTexts'])->name('gallery-images.texts.get');
+        Route::post('gallery-images/{image}/texts', [AdminGalleryController::class, 'saveImageTexts'])->name('gallery-images.texts.save');
+        
+        // Gestión de idiomas
+        Route::resource('idiomas', IdiomaController::class);
+        Route::post('idiomas/update-order', [IdiomaController::class, 'updateOrder'])->name('idiomas.update-order');
+        Route::post('idiomas/{idioma}/toggle-active', [IdiomaController::class, 'toggleActive'])->name('idiomas.toggle-active');
         
         // Upload de imágenes para TinyMCE
         Route::post('upload-image', [ContentAdminController::class, 'uploadImage'])->name('upload-image');

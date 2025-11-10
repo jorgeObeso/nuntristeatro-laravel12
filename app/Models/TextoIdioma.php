@@ -69,7 +69,7 @@ class TextoIdioma extends Model
     public function scopeByIdioma($query, $codigoIdioma)
     {
         return $query->whereHas('idioma', function ($q) use ($codigoIdioma) {
-            $q->where('codigo', $codigoIdioma);
+            $q->where('etiqueta', $codigoIdioma);
         });
     }
 

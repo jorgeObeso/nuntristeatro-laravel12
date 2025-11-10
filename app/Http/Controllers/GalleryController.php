@@ -26,7 +26,9 @@ class GalleryController extends Controller
     {
         $gallery = Gallery::where('activa', true)
             ->with(['images' => function($query) {
-                $query->orderBy('orden')->orderBy('id');
+                $query->with(['texts.idioma'])
+                      ->orderBy('orden')
+                      ->orderBy('id');
             }])
             ->get()
             ->firstWhere('slug', $slug);

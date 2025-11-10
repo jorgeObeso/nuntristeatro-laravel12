@@ -147,6 +147,31 @@
                             </ul>
                         </li>
 
+                        <!-- Idiomas -->
+                        <li class="nav-item {{ request()->routeIs('admin.idiomas.*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.idiomas.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-language"></i>
+                                <p>
+                                    Idiomas
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.idiomas.index') }}" class="nav-link {{ request()->routeIs('admin.idiomas.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Gestionar Idiomas</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.idiomas.create') }}" class="nav-link {{ request()->routeIs('admin.idiomas.create') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Nuevo Idioma</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <!-- Menús -->
                         <li class="nav-item {{ request()->routeIs('admin.menus.*') ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ request()->routeIs('admin.menus.*') ? 'active' : '' }}">

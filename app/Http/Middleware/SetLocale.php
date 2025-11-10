@@ -30,8 +30,8 @@ class SetLocale
             // Verificar si el idioma existe en la base de datos
             $idioma = null;
             if ($locale) {
-                $idioma = Idioma::where('codigo', $locale)
-                                ->where('activado', true)
+                $idioma = Idioma::where('etiqueta', $locale)
+                                ->where('activo', true)
                                 ->first();
             }
             
@@ -42,13 +42,13 @@ class SetLocale
                 Session::put('idioma_id', $idioma->id);
             } else {
                 // Si no se encuentra, usar el idioma por defecto
-                $idiomaDefecto = Idioma::where('principal', true)
-                                       ->where('activado', true)
+                $idiomaDefecto = Idioma::where('es_principal', true)
+                                       ->where('activo', true)
                                        ->first();
                 
                 if ($idiomaDefecto) {
-                    App::setLocale($idiomaDefecto->codigo);
-                    Session::put('idioma', $idiomaDefecto->codigo);
+                    App::setLocale($idiomaDefecto->etiqueta);
+                    Session::put('idioma', $idiomaDefecto->etiqueta);
                     Session::put('idioma_id', $idiomaDefecto->id);
                 } else {
                     // Fallback si no hay idiomas configurados

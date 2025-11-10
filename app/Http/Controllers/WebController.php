@@ -17,9 +17,9 @@ class WebController extends Controller
     public function index()
     {
         $idioma = Session::get('idioma') ?? 
-                  Idioma::where('principal', true)
-                        ->where('activado', true)
-                        ->first()->codigo ?? 'es';
+                  Idioma::where('es_principal', true)
+                        ->where('activo', true)
+                        ->first()->etiqueta ?? 'es';
         
         return redirect("/{$idioma}");
     }

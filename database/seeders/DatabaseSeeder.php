@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            IdiomasSeeder::class,  // Nuevo seeder para idiomas dinámicos
             IdiomaSeeder::class,
             TipoContenidoSeeder::class,
             ConfiguracionSeeder::class,
