@@ -91,4 +91,48 @@ class Content extends Model
     {
         return $this->textos()->where('idioma_id', $idiomaId)->first();
     }
+
+    /**
+     * Accessor para obtener el título del contenido
+     */
+    public function getTituloAttribute()
+    {
+        // Intentar obtener el texto en el idioma actual de la sesión
+        $idiomaActual = session('idioma_actual', 'es');
+        
+        $texto = $this->textos()
+            ->whereHas('idioma', function($query) use ($idiomaActual) {
+                $query->where('etiqueta', $idiomaActual);
+            })
+            ->first();
+        
+        if ($texto && $texto->titulo) {
+            return $texto->titulo;
+        }
+        
+        // Fallback al idioma principal
+        $idiomaPrincipal = \App\Models\Idioma::where('es_principal', true)->first();
+        if ($idiomaPrincipal) {
+            $textoFallback = $this->textos()->where('idioma_id', $idiomaPrincipal->id)->first();
+            if ($textoFallback && $textoFallback->titulo) {
+                return $textoFallback->titulo;
+            }
+        }
+        
+        // Si no hay título, usar el primer texto disponible
+        $primerTexto = $this->textos()->first();
+        if ($primerTexto && $primerTexto->titulo) {
+            return $primerTexto->titulo;
+        }
+        
+        return 'Contenido sin título';
+    }
+
+    /**
+     * Relación con tipo de contenido
+     */
+    public function tipoContenido()
+    {
+        return $this->belongsTo(TipoContenido::class, 'tipo_contenido_id');
+    }
 }

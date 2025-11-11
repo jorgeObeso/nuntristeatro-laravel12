@@ -72,6 +72,9 @@ class GalleryController extends Controller
 
         // Cargar idiomas activos para el modal de edición
         $idiomasActivos = \App\Models\Idioma::where('activo', true)->orderBy('orden')->get();
+        
+        // Debug temporal
+        \Log::info('Galería: ' . $gallery->nombre . ', Idiomas activos: ' . $idiomasActivos->count());
 
         return view('admin.galleries.show', compact('gallery', 'idiomasActivos'));
     }

@@ -40,7 +40,7 @@
             <p class="login-box-msg">Iniciar sesión en el panel de administración</p>
 
             {{-- Formulario de login actualizado --}}
-            <form action="{{ route('admin.login.post') }}" method="post">
+            <form action="{{ route('admin.authenticate') }}" method="post">
                 @csrf
                 
                 <div class="input-group mb-3">

@@ -7,6 +7,7 @@ use App\Models\Menu;
 use App\Models\TextoIdioma;
 use App\Models\Idioma;
 use App\Models\TipoContenido;
+use App\Models\Content;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -17,7 +18,8 @@ class MenuAdminController extends Controller
      */
     public function index()
     {
-        $menus = Menu::with(['textos.idioma'])
+        $menus = Menu::with(['parent', 'children', 'tipoContenido', 'content'])
+                    ->whereNull('parent_id')
                     ->orderBy('orden')
                     ->get();
                     
@@ -29,10 +31,30 @@ class MenuAdminController extends Controller
      */
     public function create()
     {
-        $idiomas = Idioma::where('activado', true)->get();
-        $menusParent = Menu::whereNull('parent_id')->get();
+        $idiomas = Idioma::where('activo', true)->get();
+        $menusParent = Menu::whereNull('parent_id')
+                          ->orderBy('orden')
+                          ->get();
+        $tiposContenido = TipoContenido::tiposParaMenu();
+        $contenidos = Content::with('textos.idioma')->get();
         
-        return view('admin.menus.create', compact('idiomas', 'menusParent'));
+        // Pre-cargar todos los contenidos organizados por tipo para evitar AJAX
+        $contenidosPorTipo = [];
+        foreach ($tiposContenido as $tipo) {
+            $tipoMapeado = $this->mapearTipoContenido($tipo->tipo_contenido);
+            $contenidosDelTipo = Content::where('tipo_contenido', $tipoMapeado)
+                                     ->get()
+                                     ->map(function ($content) {
+                                         return [
+                                             'id' => $content->id,
+                                             'titulo' => $content->titulo,
+                                             'slug' => $content->slug ?? 'sin-slug',
+                                         ];
+                                     });
+            $contenidosPorTipo[$tipo->id] = $contenidosDelTipo;
+        }
+        
+        return view('admin.menus.create', compact('idiomas', 'menusParent', 'tiposContenido', 'contenidos', 'contenidosPorTipo'));
     }
 
     /**
@@ -41,35 +63,59 @@ class MenuAdminController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'orden' => 'required|integer',
-            'visible' => 'boolean',
-            'blank' => 'boolean',
             'parent_id' => 'nullable|exists:menus,id',
+            'tipo_enlace' => 'required|in:contenido,url_externa,ninguno',
+            'tipo_contenido_id' => 'nullable|exists:tipo_contenidos,id',
+            'content_id' => 'nullable|exists:contents,id',
+            'url' => 'nullable|string',
+            'visible' => 'boolean',
+            'abrir_nueva_ventana' => 'boolean',
+            'menu_pie' => 'boolean',
+            'orden' => 'required|integer|min:1',
             'textos' => 'required|array',
             'textos.*.titulo' => 'required|string|max:255',
         ]);
 
         // Crear el menú principal
         $menu = Menu::create([
-            'enlace' => $request->enlace,
-            'orden' => $request->orden,
-            'visible' => $request->visible ?? true,
-            'blank' => $request->blank ?? false,
             'parent_id' => $request->parent_id,
+            'tipo_enlace' => $request->tipo_enlace,
+            'tipo_contenido_id' => $request->tipo_contenido_id,
+            'content_id' => $request->content_id,
+            'url' => $request->url,
+            'icon' => null, // Quitamos los iconos
+            'visible' => $request->has('visible'),
+            'abrir_nueva_ventana' => $request->has('abrir_nueva_ventana'),
+            'menu_pie' => $request->has('menu_pie'),
+            'orden' => $request->orden,
         ]);
+
+        // Obtener el primer tipo de contenido (para compatibilidad)
+        $tipoContenido = \App\Models\TipoContenido::first();
 
         // Crear textos en diferentes idiomas
         foreach ($request->textos as $idiomaId => $textoData) {
             if (!empty($textoData['titulo'])) {
-                $tipoContenido = TipoContenido::where('tipo_contenido', 'Menu')->first();
+                // Generar slug único para el menú
+                $baseSlug = Str::slug($textoData['titulo']);
+                if (empty($baseSlug)) {
+                    $baseSlug = 'menu-' . $menu->id . '-' . $idiomaId;
+                }
                 
+                // Asegurar que el slug sea único para este menú e idioma
+                $slug = $baseSlug . '-menu-' . $menu->id;
+
                 TextoIdioma::create([
+                    'objeto_type' => 'App\Models\Menu',
+                    'objeto_id' => $menu->id,
                     'idioma_id' => $idiomaId,
-                    'menu_id' => $menu->id,
-                    'tipo_contenido_id' => $tipoContenido->id,
                     'titulo' => $textoData['titulo'],
-                    'slug' => Str::slug($textoData['titulo']),
+                    'slug' => $slug,
+                    'activo' => true,
                     'visible' => true,
+                    // Campos requeridos por compatibilidad
+                    'tipo_contenido_id' => $tipoContenido ? $tipoContenido->id : null,
+                    'contenido_id' => null,
                 ]);
             }
         }
@@ -83,7 +129,7 @@ class MenuAdminController extends Controller
      */
     public function show(Menu $menu)
     {
-        $menu->load(['textos.idioma', 'parent', 'children']);
+        $menu->load(['parent', 'children', 'tipoContenido', 'content']);
         return view('admin.menus.show', compact('menu'));
     }
 
@@ -92,11 +138,18 @@ class MenuAdminController extends Controller
      */
     public function edit(Menu $menu)
     {
-        $menu->load(['textos.idioma']);
-        $idiomas = Idioma::where('activado', true)->get();
-        $menusParent = Menu::where('id', '!=', $menu->id)->whereNull('parent_id')->get();
+        // Cargar el menú con sus textos
+        $menu = $menu->load('textos');
         
-        return view('admin.menus.edit', compact('menu', 'idiomas', 'menusParent'));
+        $idiomas = Idioma::where('activo', true)->get();
+        $menusParent = Menu::where('id', '!=', $menu->id)
+                          ->whereNull('parent_id')
+                          ->orderBy('orden')
+                          ->get();
+        $tiposContenido = TipoContenido::tiposParaMenu();
+        $contenidos = Content::with('textos.idioma')->get();
+        
+        return view('admin.menus.edit', compact('menu', 'idiomas', 'menusParent', 'tiposContenido', 'contenidos'));
     }
 
     /**
@@ -105,44 +158,64 @@ class MenuAdminController extends Controller
     public function update(Request $request, Menu $menu)
     {
         $request->validate([
-            'orden' => 'required|integer',
-            'visible' => 'boolean',
-            'blank' => 'boolean',
             'parent_id' => 'nullable|exists:menus,id',
+            'tipo_enlace' => 'required|in:contenido,url_externa,ninguno',
+            'tipo_contenido_id' => 'nullable|exists:tipo_contenidos,id',
+            'content_id' => 'nullable|exists:contents,id',
+            'url_externa' => 'nullable|url',
+            'icon' => 'nullable|string|max:100',
+            'visible' => 'boolean',
+            'abrir_nueva_ventana' => 'boolean',
+            'menu_pie' => 'boolean',
+            'orden' => 'required|integer|min:1',
             'textos' => 'required|array',
             'textos.*.titulo' => 'required|string|max:255',
         ]);
 
         // Actualizar el menú principal
         $menu->update([
-            'enlace' => $request->enlace,
-            'orden' => $request->orden,
-            'visible' => $request->visible ?? true,
-            'blank' => $request->blank ?? false,
             'parent_id' => $request->parent_id,
+            'tipo_enlace' => $request->tipo_enlace,
+            'tipo_contenido_id' => $request->tipo_contenido_id,
+            'content_id' => $request->content_id,
+            'url_externa' => $request->url_externa,
+            'icon' => $request->icon,
+            'visible' => $request->has('visible'),
+            'abrir_nueva_ventana' => $request->has('abrir_nueva_ventana'),
+            'menu_pie' => $request->has('menu_pie'),
+            'orden' => $request->orden,
         ]);
 
         // Actualizar o crear textos
         foreach ($request->textos as $idiomaId => $textoData) {
             if (!empty($textoData['titulo'])) {
-                $texto = TextoIdioma::where('menu_id', $menu->id)
-                                   ->where('idioma_id', $idiomaId)
-                                   ->first();
+                $texto = $menu->textos()
+                             ->where('idioma_id', $idiomaId)
+                             ->first();
+
+                // Generar slug único para el menú
+                $baseSlug = Str::slug($textoData['titulo']);
+                if (empty($baseSlug)) {
+                    $baseSlug = 'menu-' . $menu->id . '-' . $idiomaId;
+                }
+                
+                // Asegurar que el slug sea único para este menú e idioma
+                $slug = $baseSlug . '-menu-' . $menu->id;
 
                 $data = [
                     'titulo' => $textoData['titulo'],
-                    'slug' => Str::slug($textoData['titulo']),
+                    'slug' => $slug,
+                    'activo' => true,
                     'visible' => true,
                 ];
 
                 if ($texto) {
                     $texto->update($data);
                 } else {
-                    $tipoContenido = TipoContenido::where('tipo_contenido', 'Menu')->first();
                     TextoIdioma::create(array_merge($data, [
+                        'objeto_type' => 'App\Models\Menu',
+                        'objeto_id' => $menu->id,
                         'idioma_id' => $idiomaId,
-                        'menu_id' => $menu->id,
-                        'tipo_contenido_id' => $tipoContenido->id,
                     ]));
                 }
             }
@@ -174,21 +247,151 @@ class MenuAdminController extends Controller
     }
 
     /**
-     * Actualizar el orden de los menús
+     * Actualizar el orden de los menús y sus relaciones padre-hijo
      */
     public function updateOrder(Request $request)
     {
+        \Log::info('updateOrder - Datos recibidos:', [
+            'request_data' => $request->all(),
+            'menus_count' => count($request->menus ?? [])
+        ]);
+
         $request->validate([
             'menus' => 'required|array',
             'menus.*.id' => 'required|exists:menus,id',
             'menus.*.orden' => 'required|integer',
+            'menus.*.parent_id' => 'nullable|exists:menus,id',
         ]);
 
+        $actualizado = 0;
         foreach ($request->menus as $menuData) {
-            Menu::where('id', $menuData['id'])
-                ->update(['orden' => $menuData['orden']]);
+            $resultado = Menu::where('id', $menuData['id'])
+                ->update([
+                    'orden' => $menuData['orden'],
+                    'parent_id' => $menuData['parent_id']
+                ]);
+            
+            \Log::info('updateOrder - Menu actualizado:', [
+                'menu_id' => $menuData['id'],
+                'new_orden' => $menuData['orden'],
+                'new_parent_id' => $menuData['parent_id'],
+                'affected_rows' => $resultado
+            ]);
+            
+            $actualizado += $resultado;
         }
 
-        return response()->json(['success' => true]);
+        \Log::info('updateOrder - Proceso completado:', [
+            'total_menus_procesados' => count($request->menus),
+            'total_filas_actualizadas' => $actualizado
+        ]);
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Estructura de menús actualizada',
+            'menus_procesados' => count($request->menus),
+            'filas_actualizadas' => $actualizado
+        ]);
+    }
+
+    /**
+     * Obtener contenidos filtrados por tipo de contenido
+     */
+    public function getContentsByType(Request $request)
+    {
+        \Log::info('getContentsByType llamado', ['request' => $request->all()]);
+        
+        $tipoContenidoId = $request->tipo_contenido_id;
+        
+        if (!$tipoContenidoId) {
+            \Log::info('Sin tipo_contenido_id');
+            return response()->json([]);
+        }
+        
+        // Obtener el tipo de contenido para obtener su nombre
+        $tipoContenido = TipoContenido::find($tipoContenidoId);
+        \Log::info('TipoContenido encontrado', ['tipo' => $tipoContenido ? $tipoContenido->toArray() : null]);
+        
+        if (!$tipoContenido) {
+            \Log::info('TipoContenido no encontrado');
+            return response()->json([]);
+        }
+        
+        // Mapear tipos de contenido a los valores en la base de datos
+        $tipoMapeado = $this->mapearTipoContenido($tipoContenido->tipo_contenido);
+        \Log::info('Mapeo realizado', ['original' => $tipoContenido->tipo_contenido, 'mapeado' => $tipoMapeado]);
+        
+        $contenidos = Content::where('tipo_contenido', $tipoMapeado)
+                            ->with(['textos' => function($query) {
+                                $query->where('visible', true);
+                            }])
+                            ->get();
+
+        \Log::info('Contenidos encontrados', ['count' => $contenidos->count()]);
+
+        $result = $contenidos->map(function ($content) {
+            return [
+                'id' => $content->id,
+                'titulo' => $content->titulo,
+                'slug' => $content->slug ?? 'sin-slug',
+            ];
+        });
+
+        \Log::info('Resultado final', ['result' => $result->toArray()]);
+        
+        return response()->json($result);
+    }
+    
+    /**
+     * Método de prueba simple (temporal)
+     */
+    public function testAjax()
+    {
+        \Log::info('testAjax llamado');
+        
+        try {
+            // Datos hardcodeados para probar
+            $result = [
+                [
+                    'id' => 1,
+                    'titulo' => 'Contenido de Prueba 1',
+                    'slug' => 'contenido-prueba-1'
+                ],
+                [
+                    'id' => 2,
+                    'titulo' => 'Contenido de Prueba 2', 
+                    'slug' => 'contenido-prueba-2'
+                ]
+            ];
+            
+            \Log::info('testAjax resultado', ['result' => $result]);
+            return response()->json($result);
+            
+        } catch (\Exception $e) {
+            \Log::error('Error en testAjax', [
+                'error' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine()
+            ]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    /**
+     * Mapear tipos de contenido del dropdown a valores de BD
+     */
+    private function mapearTipoContenido($tipoContenido)
+    {
+        $mapeo = [
+            'Contenido' => 'pagina',        // Páginas generales
+            'Páginas' => 'pagina',          // Alias 
+            'Noticias' => 'noticia',        // Noticias
+            'Entrevistas' => 'entrevista',  // Entrevistas
+            'Portada' => 'portada',         // Portada
+            'Galerías' => 'galeria',        // Galerías
+            'Multimedia' => 'multimedia'    // Multimedia
+        ];
+        
+        return $mapeo[$tipoContenido] ?? strtolower($tipoContenido);
     }
 }

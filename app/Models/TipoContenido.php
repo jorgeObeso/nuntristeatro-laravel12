@@ -17,6 +17,26 @@ class TipoContenido extends Model
     ];
 
     /**
+     * Accessor para nombre (compatibilidad)
+     */
+    public function getNombreAttribute()
+    {
+        return $this->tipo_contenido;
+    }
+
+    /**
+     * Obtener solo tipos de contenido que deben aparecer en menús públicos
+     */
+    public static function tiposParaMenu()
+    {
+        return self::whereIn('tipo_contenido', [
+            'Páginas',       // Páginas generales (antes "Contenido")
+            'Noticias',      // Noticias
+            'Entrevistas'    // Entrevistas
+        ])->get();
+    }
+
+    /**
      * Relación: Un tipo de contenido puede tener muchos textos
      */
     public function textos()

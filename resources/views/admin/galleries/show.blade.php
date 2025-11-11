@@ -82,6 +82,10 @@
                             <i class="fas fa-sort" id="sort-icon"></i>
                             <span id="sort-text">Modo Ordenar</span>
                         </button>
+                        <button type="button" class="btn btn-sm btn-warning ms-2" onclick="testModal()">
+                            <i class="fas fa-test"></i>
+                            Probar Modal
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -187,7 +191,15 @@
                     </div>
 
                     <!-- Tabs para idiomas -->
+                    <!-- DEBUG: Número de idiomas activos: {{ $idiomasActivos->count() }} -->
                     <ul class="nav nav-tabs" id="languageTabsTexts" role="tablist">
+                        @if($idiomasActivos->count() === 0)
+                            <li class="nav-item">
+                                <span class="nav-link text-warning">⚠️ No hay idiomas activos configurados</span>
+                            </li>
+                        @else
+                            <!-- DEBUG: Renderizando {{ $idiomasActivos->count() }} idiomas -->
+                        @endif
                         @foreach($idiomasActivos as $index => $idioma)
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link {{ $index === 0 ? 'active' : '' }}" 
@@ -1165,14 +1177,68 @@ window.testGallery = function() {
 // === FUNCIONES PARA EDICIÓN MULTIIDIOMA ===
 
 /**
+ * Función de prueba para abrir el modal directamente
+ */
+function testModal() {
+    console.log('🧪 Probando modal...');
+    
+    // Verificar que el modal existe
+    const modalElement = document.getElementById('editImageTextsModal');
+    if (!modalElement) {
+        alert('❌ Error: No se encontró el modal');
+        return;
+    }
+    
+    // Mostrar información de debug
+    const tabsContainer = document.getElementById('languageTabsTexts');
+    const tabs = tabsContainer ? tabsContainer.querySelectorAll('.nav-link') : [];
+    console.log('📋 Pestañas encontradas:', tabs.length);
+    
+    if (tabs.length === 0) {
+        alert('⚠️ No hay idiomas configurados');
+        return;
+    }
+    
+    // Llenar algunos datos de prueba
+    document.getElementById('imageId').value = 1;
+    document.getElementById('modalImagePreview').src = '/storage/images/galeria/imagen/content_1_16nov08_1762514696_4WBGr5.jpg';
+    
+    // Mostrar modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    console.log('✅ Modal mostrado');
+}
+
+/**
  * Abrir modal para editar textos multiidioma de una imagen
  */
 function editImageTexts(imageId) {
     console.log('🌐 Editando textos multiidioma para imagen:', imageId);
     
+    // Verificar que el modal existe
+    const modalElement = document.getElementById('editImageTextsModal');
+    if (!modalElement) {
+        alert('❌ Error: No se encontró el modal editImageTextsModal');
+        return;
+    }
+    
+    // Verificar que existen pestañas de idiomas
+    const tabsContainer = document.getElementById('languageTabsTexts');
+    const tabs = tabsContainer ? tabsContainer.querySelectorAll('.nav-link') : [];
+    console.log('📋 Pestañas encontradas:', tabs.length);
+    
+    if (tabs.length === 0) {
+        alert('⚠️ No hay idiomas configurados. Ve a Admin > Idiomas para configurar idiomas primero.');
+        return;
+    }
+    
     // Obtener datos de la imagen
     fetch(`/admin/gallery-images/${imageId}/texts`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('📡 Respuesta recibida:', response.status);
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 // Establecer ID de imagen

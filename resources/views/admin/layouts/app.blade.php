@@ -191,6 +191,31 @@
                             </ul>
                         </li>
 
+                        <!-- Slides -->
+                        <li class="nav-item {{ request()->routeIs('admin.slides.*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.slides.*') ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-images"></i>
+                                <p>
+                                    Slides
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
+                            </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.slides.index') }}" class="nav-link {{ request()->routeIs('admin.slides.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Gestionar Slides</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.slides.create') }}" class="nav-link {{ request()->routeIs('admin.slides.create') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Crear Slide</p>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <!-- Configuración -->
                         <li class="nav-item {{ request()->routeIs('admin.image-configs.*') ? 'menu-open' : '' }}">
                             <a href="#" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">

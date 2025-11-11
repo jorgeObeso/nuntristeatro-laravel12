@@ -160,6 +160,42 @@ class ImageConfigSeeder extends Seeder
                 'activo' => true,
                 'descripcion' => 'Miniaturas de galería - Desktop: 200x150, Móvil: 150x112',
             ],
+
+            // === CONFIGURACIONES PARA SLIDES ===
+            [
+                'tipo_contenido' => 'slide',
+                'tipo_imagen' => 'imagen',
+                'ancho' => 1920,
+                'alto' => 1080,
+                'ancho_movil' => 800,
+                'alto_movil' => 450,
+                'mantener_aspecto' => true,
+                'mantener_aspecto_movil' => true,
+                'formato' => 'jpg',
+                'calidad' => 90,
+                'calidad_movil' => 85,
+                'redimensionar' => true,
+                'generar_version_movil' => true,
+                'activo' => true,
+                'descripcion' => 'Imagen principal de slides - Desktop: 1920x1080 (Full HD), Móvil: 800x450',
+            ],
+            [
+                'tipo_contenido' => 'slide',
+                'tipo_imagen' => 'imagen_miniatura',
+                'ancho' => 300,
+                'alto' => 200,
+                'ancho_movil' => 150,
+                'alto_movil' => 100,
+                'mantener_aspecto' => true,
+                'mantener_aspecto_movil' => true,
+                'formato' => 'jpg',
+                'calidad' => 80,
+                'calidad_movil' => 75,
+                'redimensionar' => true,
+                'generar_version_movil' => true,
+                'activo' => true,
+                'descripcion' => 'Miniatura de slides - Desktop: 300x200, Móvil: 150x100',
+            ],
         ];
 
         foreach ($configs as $config) {

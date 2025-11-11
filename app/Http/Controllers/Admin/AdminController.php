@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\Hash;
 class AdminController extends Controller
 {
     /**
+     * Dashboard principal del admin (método index)
+     */
+    public function index()
+    {
+        return $this->dashboard();
+    }
+
+    /**
      * Dashboard principal del admin
      */
     public function dashboard()
@@ -23,7 +31,7 @@ class AdminController extends Controller
             'noticias' => Content::where('tipo_contenido', 'noticia')->count(),
             'paginas' => Content::where('tipo_contenido', 'pagina')->count(),
             'menus' => Menu::count(),
-            'idiomas' => Idioma::where('activado', true)->count(),
+            'idiomas' => Idioma::where('activo', true)->count(),
             'usuarios' => User::count(),
         ];
 

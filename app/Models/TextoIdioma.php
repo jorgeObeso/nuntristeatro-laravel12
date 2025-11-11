@@ -25,10 +25,16 @@ class TextoIdioma extends Model
         'visible',
         'imagen_alt',
         'imagen_portada_alt',
+        'objeto_type',
+        'objeto_id',
+        'campo',
+        'texto',
+        'activo',
     ];
 
     protected $casts = [
         'visible' => 'boolean',
+        'activo' => 'boolean',
     ];
 
     /**
@@ -53,6 +59,14 @@ class TextoIdioma extends Model
     public function tipoContenido()
     {
         return $this->belongsTo(TipoContenido::class);
+    }
+
+    /**
+     * Relación polimórfica: Un texto puede pertenecer a diferentes modelos
+     */
+    public function objeto()
+    {
+        return $this->morphTo();
     }
 
     /**
