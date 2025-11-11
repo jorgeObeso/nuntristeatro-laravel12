@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role_id',
     ];
 
     /**
@@ -44,5 +45,58 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // Relaciones
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+    }
+
+    // Métodos de utilidad para permisos
+    public function hasRole($role): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+        
+        if (is_string($role)) {
+            return $this->role->slug === $role;
+        }
+        
+        if ($role instanceof Role) {
+            return $this->role->id === $role->id;
+        }
+        
+        return false;
+    }
+
+    public function hasPermission($permission): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+        
+        return $this->role->hasPermission($permission);
+    }
+
+    public function hasPermissionTo($module, $action): bool
+    {
+        if (!$this->role) {
+            return false;
+        }
+        
+        return $this->role->hasPermissionTo($module, $action);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole('administrador');
+    }
+
+    // Accessors
+    public function getRoleNameAttribute(): string
+    {
+        return $this->role ? $this->role->nombre : 'Sin rol';
     }
 }

@@ -236,19 +236,65 @@
                         </li>
 
                         <!-- Idiomas -->
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
+                        <li class="nav-item {{ request()->routeIs('admin.idiomas.*') ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs('admin.idiomas.*') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-language"></i>
-                                <p>Idiomas</p>
+                                <p>
+                                    Idiomas
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.idiomas.index') }}" class="nav-link {{ request()->routeIs('admin.idiomas.index') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Gestionar Idiomas</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.idiomas.create') }}" class="nav-link {{ request()->routeIs('admin.idiomas.create') ? 'active' : '' }}">
+                                        <i class="far fa-circle nav-icon"></i>
+                                        <p>Crear Idioma</p>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
 
-                        <!-- Usuarios -->
-                        <li class="nav-item">
-                            <a href="#" class="nav-link">
-                                <i class="nav-icon fas fa-users"></i>
-                                <p>Usuarios</p>
+                        <!-- Usuarios y Permisos -->
+                        <li class="nav-item {{ request()->routeIs(['admin.users.*', 'admin.roles.*', 'admin.permissions.*']) ? 'menu-open' : '' }}">
+                            <a href="#" class="nav-link {{ request()->routeIs(['admin.users.*', 'admin.roles.*', 'admin.permissions.*']) ? 'active' : '' }}">
+                                <i class="nav-icon fas fa-users-cog"></i>
+                                <p>
+                                    Sistema de Usuarios
+                                    <i class="right fas fa-angle-left"></i>
+                                </p>
                             </a>
+                            <ul class="nav nav-treeview">
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                                        <i class="fas fa-user nav-icon"></i>
+                                        <p>Usuarios</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                                        <i class="fas fa-user-tag nav-icon"></i>
+                                        <p>Roles</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                                        <i class="fas fa-key nav-icon"></i>
+                                        <p>Permisos</p>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a href="{{ route('admin.roles.permission-matrix') }}" class="nav-link {{ request()->routeIs('admin.roles.permission-matrix*') ? 'active' : '' }}">
+                                        <i class="fas fa-table nav-icon"></i>
+                                        <p>Matriz de Permisos</p>
+                                    </a>
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </nav>

@@ -9,10 +9,157 @@ use App\Http\Controllers\Admin\SlideAdminController;
 use App\Http\Controllers\Admin\ImageConfigController;
 use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\IdiomaController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Ruta principal - redirección al idioma por defecto
 Route::get('/', [WebController::class, 'index'])->name('principal');
+
+// API temporal para verificar datos (sin autenticación)
+Route::get('api/matrix-data', function() {
+    $roles = App\Models\Role::with('permissions')->orderBy('nombre')->get();
+    $permissions = App\Models\Permission::where('activo', true)->orderBy('modulo')->orderBy('tipo_permiso')->get();
+    
+    $matrix = [];
+    foreach ($roles as $role) {
+        $rolePermissions = $role->permissions->pluck('id')->toArray();
+        $matrix[$role->id] = $rolePermissions;
+    }
+    
+    return response()->json([
+        'roles' => $roles->map(function($role) {
+            return [
+                'id' => $role->id,
+                'nombre' => $role->nombre,
+                'permissions_count' => $role->permissions->count(),
+                'permissions' => $role->permissions->pluck('id')->toArray()
+            ];
+        }),
+        'permissions' => $permissions->map(function($permission) {
+            return [
+                'id' => $permission->id,
+                'nombre' => $permission->nombre,
+                'modulo' => $permission->modulo,
+                'activo' => $permission->activo
+            ];
+        }),
+        'matrix' => $matrix,
+        'raw_relations' => DB::table('role_permissions')
+            ->join('roles', 'roles.id', '=', 'role_permissions.role_id')
+            ->join('permissions', 'permissions.id', '=', 'role_permissions.permission_id')
+            ->select('roles.nombre as role_name', 'roles.id as role_id', 'permissions.nombre as perm_name', 'permissions.id as perm_id')
+            ->get()
+    ]);
+});
+
+// Matrix temporal sin autenticación
+Route::get('test-matrix', function() {
+    return view('admin.clean-matrix');
+});
+
+// Matrix con JavaScript completo
+Route::get('matrix-test', function() {
+    return view('admin.matrix-test');
+});
+
+// Debug de la página original
+Route::get('matrix-original', function() {
+    $roles = App\Models\Role::with('permissions')->orderBy('nombre')->get();
+    $permissions = App\Models\Permission::where('activo', true)
+        ->orderBy('modulo')
+        ->orderBy('tipo_permiso')
+        ->get();
+    
+    $permissionsByModule = $permissions->groupBy('modulo');
+    
+    // Crear matriz de roles x permisos
+    $matrix = [];
+    foreach ($roles as $role) {
+        $rolePermissions = $role->permissions->pluck('id')->toArray();
+        $matrix[$role->id] = $rolePermissions;
+    }
+    
+    return view('admin.roles.permission-matrix', compact('roles', 'permissions', 'permissionsByModule', 'matrix'));
+});
+
+// Debug detallado de event listeners
+Route::get('matrix-debug', function() {
+    return view('admin.matrix-debug');
+});
+
+// Versión limpia sin AdminLTE
+Route::get('matrix-clean', function() {
+    $roles = App\Models\Role::with('permissions')->orderBy('nombre')->get();
+    $permissions = App\Models\Permission::where('activo', true)
+        ->orderBy('modulo')
+        ->orderBy('tipo_permiso')
+        ->get();
+    
+    $permissionsByModule = $permissions->groupBy('modulo');
+    
+    // Crear matriz de roles x permisos
+    $matrix = [];
+    foreach ($roles as $role) {
+        $rolePermissions = $role->permissions->pluck('id')->toArray();
+        $matrix[$role->id] = $rolePermissions;
+    }
+    
+    return view('admin.matrix-clean', compact('roles', 'permissions', 'permissionsByModule', 'matrix'));
+});
+
+// Guardado temporal sin autenticación
+Route::post('test-matrix-save', function(Illuminate\Http\Request $request) {
+    try {
+        $matrix = $request->json('matrix') ?? $request->input('matrix');
+        
+        if (!$matrix || !is_array($matrix)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos de matriz inválidos.'
+            ], 400);
+        }
+
+        \DB::transaction(function() use ($matrix) {
+            foreach ($matrix as $roleId => $permissionIds) {
+                $role = App\Models\Role::findOrFail($roleId);
+                $role->permissions()->sync($permissionIds);
+            }
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Matriz de permisos actualizada correctamente (TEST MODE).'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+});
+
+// Guardado temporal usando GET para evitar CSRF
+Route::get('test-save-permissions/{roleId}/{permissionIds}', function($roleId, $permissionIds) {
+    try {
+        $permissionArray = explode(',', $permissionIds);
+        $permissionArray = array_filter(array_map('intval', $permissionArray));
+        
+        $role = App\Models\Role::findOrFail($roleId);
+        $role->permissions()->sync($permissionArray);
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Rol {$role->nombre} actualizado con permisos: " . implode(',', $permissionArray)
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error: ' . $e->getMessage()
+        ], 500);
+    }
+});
 
 // Cambiar idioma
 Route::get('/idioma/{idioma}', [WebController::class, 'cambiarIdioma'])->name('cambiar-idioma');
@@ -76,6 +223,7 @@ Route::middleware(['auth'])->group(function () {
         
         // Idiomas
         Route::resource('idiomas', IdiomaController::class);
+        Route::post('idiomas/update-order', [IdiomaController::class, 'updateOrder'])->name('idiomas.update-order');
         
         // Contenido
         Route::resource('contents', ContentAdminController::class);
@@ -100,5 +248,30 @@ Route::middleware(['auth'])->group(function () {
         // Slides
         Route::resource('slides', SlideAdminController::class);
         Route::post('slides/update-order', [SlideAdminController::class, 'updateOrder'])->name('slides.update-order');
+        
+        // Gestión de usuarios, roles y permisos
+        Route::resource('roles', RoleController::class);
+        Route::post('roles/{role}/permissions', [RoleController::class, 'updatePermissions'])->name('roles.update-permissions');
+        Route::get('roles/permission-matrix/view', [RoleController::class, 'permissionMatrix'])->name('roles.permission-matrix');
+        Route::post('roles/permission-matrix/update', [RoleController::class, 'updatePermissionMatrix'])->name('roles.permission-matrix.update');
+        
+        // Ruta de debug temporal
+        Route::get('debug-session', function() {
+            return view('admin.debug-session');
+        })->name('debug-session');
+        
+        // Matrix simple para testing
+        Route::get('simple-matrix', function() {
+            return view('admin.simple-matrix');
+        })->name('simple-matrix');
+        
+        // Matrix limpia sin CSS ni JS complejo
+        Route::get('clean-matrix', function() {
+            return view('admin.clean-matrix');
+        })->name('clean-matrix');
+        
+        Route::resource('permissions', PermissionController::class);
+        
+        Route::resource('users', UserController::class);
     });
 });

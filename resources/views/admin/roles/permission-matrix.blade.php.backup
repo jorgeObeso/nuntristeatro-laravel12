@@ -1,0 +1,408 @@
+@extends('admin.layouts.app')
+
+@section('content')
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">Matriz de Permisos</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('admin.roles.index') }}">Roles</a></li>
+                        <li class="breadcrumb-item active">Matriz de Permisos</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('error') }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                </div>
+            @endif
+
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title">
+                        <i class="fas fa-table"></i> Asignación de Permisos por Rol
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-success" id="btnGuardarMatrix">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                        <button type="button" class="btn btn-warning" id="btnGuardarTest">
+                            <i class="fas fa-flask"></i> Guardar (Test)
+                        </button>
+                        <a href="{{ route('admin.roles.index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Volver
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Instrucciones:</strong> Marca los checkboxes para asignar permisos a cada rol. 
+                        Los cambios se aplicarán al hacer clic en "Guardar Cambios".
+                    </div>
+
+                    @if($roles->count() > 0 && $permissions->count() > 0)
+                        <form id="permissionMatrixForm">
+                            @csrf
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped table-hover">
+                                    <thead class="thead-dark">
+                                        <tr>
+                                            <th width="300" class="text-center">
+                                                <strong>Permisos / Roles</strong>
+                                            </th>
+                                            @foreach($roles as $role)
+                                                <th class="text-center" style="min-width: 120px;">
+                                                    <div class="d-flex flex-column align-items-center">
+                                                        <strong>{{ $role->nombre }}</strong>
+                                                        <small class="text-muted">{{ $role->slug }}</small>
+                                                        <div class="mt-1">
+                                                            <button type="button" 
+                                                                    class="btn btn-xs btn-outline-primary"
+                                                                    onclick="toggleRole({{ $role->id }})">
+                                                                <i class="fas fa-check"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </th>
+                                            @endforeach
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach($permissionsByModule as $modulo => $permisos)
+                                            <!-- Encabezado del módulo -->
+                                            <tr class="bg-light">
+                                                <td colspan="{{ $roles->count() + 1 }}">
+                                                    <h6 class="mb-0 text-primary">
+                                                        <i class="fas fa-folder"></i> 
+                                                        <strong>{{ strtoupper($modulo) }}</strong>
+                                                        <small class="text-muted">({{ $permisos->count() }} permisos)</small>
+                                                    </h6>
+                                                </td>
+                                            </tr>
+                                            
+                                            <!-- Permisos del módulo -->
+                                            @foreach($permisos as $permission)
+                                                <tr>
+                                                    <td class="permission-info">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <strong>{{ $permission->nombre }}</strong>
+                                                                <br>
+                                                                <small class="text-muted">{{ $permission->descripcion }}</small>
+                                                            </div>
+                                                            <span class="badge badge-{{ 
+                                                                $permission->tipo_permiso === 'crear' ? 'success' : 
+                                                                ($permission->tipo_permiso === 'mostrar' ? 'info' : 
+                                                                ($permission->tipo_permiso === 'editar' ? 'warning' : 'danger')) 
+                                                            }}">
+                                                                {{ ucfirst($permission->tipo_permiso) }}
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    @foreach($roles as $role)
+                                                        <td class="text-center">
+                                                            <div class="form-check">
+                                                                <input type="checkbox" 
+                                                                       class="form-check-input permission-checkbox role-{{ $role->id }} module-{{ $modulo }}" 
+                                                                       name="matrix[{{ $role->id }}][]" 
+                                                                       value="{{ $permission->id }}"
+                                                                       id="permission_{{ $permission->id }}_role_{{ $role->id }}"
+                                                                       {{ in_array($permission->id, $matrix[$role->id] ?? []) ? 'checked' : '' }}>
+                                                                <label class="form-check-label" for="permission_{{ $permission->id }}_role_{{ $role->id }}">
+                                                                    <span class="sr-only">{{ $permission->nombre }} para {{ $role->nombre }}</span>
+                                                                </label>
+                                                            </div>
+                                                        </td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </form>
+
+                        <!-- Resumen de cambios -->
+                        <div class="mt-3">
+                            <div class="card card-outline card-info">
+                                <div class="card-header">
+                                    <h6 class="card-title mb-0">
+                                        <i class="fas fa-chart-pie"></i> Resumen de Permisos por Rol
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        @foreach($roles as $role)
+                                            <div class="col-md-4 mb-3">
+                                                <div class="info-box">
+                                                    <span class="info-box-icon bg-{{ 
+                                                        $role->slug === 'administrador' ? 'danger' : 
+                                                        ($role->slug === 'editor' ? 'warning' : 'info') 
+                                                    }}">
+                                                        <i class="fas fa-user-tag"></i>
+                                                    </span>
+                                                    <div class="info-box-content">
+                                                        <span class="info-box-text">{{ $role->nombre }}</span>
+                                                        <span class="info-box-number" id="count-{{ $role->id }}">
+                                                            {{ count($matrix[$role->id] ?? []) }} / {{ $permissions->count() }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    @else
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                            <h5>No hay datos suficientes</h5>
+                            @if($roles->count() === 0)
+                                <p>No hay roles creados. <a href="{{ route('admin.roles.create') }}">Crear el primer rol</a>.</p>
+                            @endif
+                            @if($permissions->count() === 0)
+                                <p>No hay permisos creados. <a href="{{ route('admin.permissions.create') }}">Crear el primer permiso</a>.</p>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+@endsection
+
+@section('scripts')
+<script>
+    // Debug: mostrar datos pasados desde el controlador
+    console.log('Matrix data:', @json($matrix));
+    console.log('Roles data:', @json($roles->map(function($role) { 
+        return ['id' => $role->id, 'nombre' => $role->nombre]; 
+    })));
+    console.log('Permissions data:', @json($permissions->map(function($permission) { 
+        return ['id' => $permission->id, 'nombre' => $permission->nombre, 'modulo' => $permission->modulo]; 
+    })));
+    
+    // Toggle todos los permisos de un rol específico
+    function toggleRole(roleId) {
+        const checkboxes = document.querySelectorAll(`.role-${roleId}`);
+        const allChecked = Array.from(checkboxes).every(checkbox => checkbox.checked);
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = !allChecked;
+        });
+        updateCounters();
+    }
+
+    // Actualizar contadores de permisos por rol
+    function updateCounters() {
+        @foreach($roles as $role)
+            const checkedCount{{ $role->id }} = document.querySelectorAll('.role-{{ $role->id }}:checked').length;
+            const totalCount = document.querySelectorAll('.role-{{ $role->id }}').length;
+            document.getElementById('count-{{ $role->id }}').textContent = `${checkedCount{{ $role->id }}} / ${totalCount}`;
+        @endforeach
+    }
+
+    // Guardar matriz de permisos (versión original)
+    document.getElementById('btnGuardarMatrix').addEventListener('click', function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+        // Construir objeto matrix con permisos por rol
+        const matrix = {};
+        
+        @foreach($roles as $role)
+            matrix[{{ $role->id }}] = [];
+            const role{{ $role->id }}Checkboxes = document.querySelectorAll('.role-{{ $role->id }}:checked');
+            role{{ $role->id }}Checkboxes.forEach(checkbox => {
+                matrix[{{ $role->id }}].push(parseInt(checkbox.value));
+            });
+        @endforeach
+
+        console.log('Matrix que se va a enviar:', matrix);
+
+        // Usar JSON puro en lugar de FormData
+        fetch('{{ route("admin.roles.permission-matrix.update") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ matrix: matrix })
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Response data:', data);
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success alert-dismissible fade show';
+                alert.innerHTML = `
+                    ${data.message}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span>&times;</span>
+                    </button>
+                `;
+                document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.card'));
+                
+                // Auto-ocultar después de 5 segundos
+                setTimeout(() => {
+                    if (alert.parentNode) {
+                        alert.parentNode.removeChild(alert);
+                    }
+                }, 5000);
+            } else {
+                alert('Error: ' + (data.message || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error completo:', error);
+            alert('Error al guardar los cambios: ' + error.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    });
+
+    // Guardar matriz de permisos (versión test sin CSRF)
+    document.getElementById('btnGuardarTest').addEventListener('click', async function() {
+        const btn = this;
+        const originalText = btn.innerHTML;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando (Test)...';
+
+        try {
+            // Construir objeto matrix con permisos por rol
+            const matrix = {};
+            
+            @foreach($roles as $role)
+                matrix[{{ $role->id }}] = [];
+                const role{{ $role->id }}Checkboxes = document.querySelectorAll('.role-{{ $role->id }}:checked');
+                role{{ $role->id }}Checkboxes.forEach(checkbox => {
+                    matrix[{{ $role->id }}].push(parseInt(checkbox.value));
+                });
+            @endforeach
+
+            console.log('Matrix que se va a enviar (Test):', matrix);
+            
+            // Usar nuestras rutas GET que funcionan sin CSRF
+            let savePromises = [];
+            let messages = [];
+            
+            for (let roleId in matrix) {
+                const permissionIds = matrix[roleId].length > 0 ? matrix[roleId].join(',') : '0';
+                const url = '/test-save-permissions/' + roleId + '/' + permissionIds;
+                
+                messages.push('Guardando rol ' + roleId + ' con permisos: [' + permissionIds + ']');
+                savePromises.push(fetch(url).then(r => r.json()));
+            }
+
+            const results = await Promise.all(savePromises);
+            
+            let allSuccess = true;
+            let finalMessages = [];
+            
+            for (let i = 0; i < results.length; i++) {
+                const result = results[i];
+                if (result.success) {
+                    finalMessages.push('✓ ' + result.message);
+                } else {
+                    finalMessages.push('✗ ' + result.message);
+                    allSuccess = false;
+                }
+            }
+
+            // Mostrar mensaje de resultado
+            const alert = document.createElement('div');
+            alert.className = 'alert ' + (allSuccess ? 'alert-success' : 'alert-warning') + ' alert-dismissible fade show';
+            alert.innerHTML = `
+                <h6><strong>Resultado del guardado (Test):</strong></h6>
+                ${finalMessages.join('<br>')}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span>&times;</span>
+                </button>
+            `;
+            document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.card'));
+            
+            // Auto-ocultar después de 7 segundos
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.parentNode.removeChild(alert);
+                }
+            }, 7000);
+
+        } catch (error) {
+            console.error('Error en guardado test:', error);
+            alert('Error al guardar (Test): ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    });
+                        alert.remove();
+                    }
+                }, 5000);
+                
+            } else {
+                console.error('Error del servidor:', data.message);
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error completo:', error);
+            alert('Error al guardar los cambios: ' + error.message);
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        });
+    });
+
+    // Actualizar contadores cuando cambie algún checkbox
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('permission-checkbox')) {
+            updateCounters();
+        }
+    });
+
+    // Inicializar contadores al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCounters();
+    });
+</script>
+@endsection
