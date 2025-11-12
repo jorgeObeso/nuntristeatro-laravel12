@@ -71,12 +71,16 @@ class RolePermissionSeeder extends Seeder
         $adminRole->permissions()->attach($permisos);
 
         // Asignar permisos limitados al Editor
-        $permisosEditor = Permission::whereIn('modulo', [
-            'contenidos', 'noticias', 'eventos', 'galerias', 'slides', 'menus'
+        $permisosEditorGenerales = Permission::whereIn('modulo', [
+            'contenidos', 'noticias', 'eventos', 'galerias', 'slides'
         ])->whereIn('tipo_permiso', ['crear', 'mostrar', 'editar', 'eliminar'])->get();
-        
+
+        $permisosEditorMenus = Permission::where('modulo', 'menus')
+            ->whereIn('tipo_permiso', ['mostrar', 'editar'])
+            ->get();
+
         $editorRole->permissions()->detach();
-        $editorRole->permissions()->attach($permisosEditor);
+        $editorRole->permissions()->attach($permisosEditorGenerales->pluck('id')->merge($permisosEditorMenus->pluck('id')));
 
         // Asignar permisos muy limitados al Usuario
         $permisosUsuario = Permission::whereIn('modulo', [
