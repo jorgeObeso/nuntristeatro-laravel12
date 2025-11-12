@@ -13,6 +13,14 @@ use Illuminate\Support\Str;
 
 class MenuAdminController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:menus,mostrar')->only(['index', 'show', 'getContentsByType', 'testAjax']);
+        $this->middleware('permission:menus,crear')->only(['create', 'store']);
+        $this->middleware('permission:menus,editar')->only(['edit', 'update', 'updateOrder']);
+        $this->middleware('permission:menus,eliminar')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -383,13 +391,27 @@ class MenuAdminController extends Controller
     private function mapearTipoContenido($tipoContenido)
     {
         $mapeo = [
-            'Contenido' => 'pagina',        // Páginas generales
-            'Páginas' => 'pagina',          // Alias 
-            'Noticias' => 'noticia',        // Noticias
-            'Entrevistas' => 'entrevista',  // Entrevistas
-            'Portada' => 'portada',         // Portada
-            'Galerías' => 'galeria',        // Galerías
-            'Multimedia' => 'multimedia'    // Multimedia
+            'Contenido' => 'pagina',
+            'contenido' => 'pagina',
+            'Páginas' => 'pagina',
+            'paginas' => 'pagina',
+            'pagina' => 'pagina',
+            'Noticias' => 'noticia',
+            'noticias' => 'noticia',
+            'Noticia' => 'noticia',
+            'noticia' => 'noticia',
+            'Entrevistas' => 'entrevista',
+            'entrevistas' => 'entrevista',
+            'Entrevista' => 'entrevista',
+            'entrevista' => 'entrevista',
+            'Portada' => 'portada',
+            'portada' => 'portada',
+            'Galerías' => 'galeria',
+            'galerias' => 'galeria',
+            'Galeria' => 'galeria',
+            'galeria' => 'galeria',
+            'Multimedia' => 'multimedia',
+            'multimedia' => 'multimedia'
         ];
         
         return $mapeo[$tipoContenido] ?? strtolower($tipoContenido);

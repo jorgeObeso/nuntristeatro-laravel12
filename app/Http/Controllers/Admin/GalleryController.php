@@ -17,6 +17,17 @@ class GalleryController extends Controller
     public function __construct(ImageService $imageService)
     {
         $this->imageService = $imageService;
+
+        $this->middleware('permission:galerias,mostrar')->only(['index', 'show']);
+        $this->middleware('permission:galerias,crear')->only(['create', 'store', 'uploadImages']);
+        $this->middleware('permission:galerias,editar')->only([
+            'edit',
+            'update',
+            'updateImageOrder',
+            'getImageTexts',
+            'saveImageTexts'
+        ]);
+        $this->middleware('permission:galerias,eliminar')->only(['destroy', 'deleteImage']);
     }
 
     /**
@@ -67,16 +78,17 @@ class GalleryController extends Controller
     public function show(Gallery $gallery)
     {
         $gallery->load(['images' => function($query) {
-            $query->orderBy('orden');
+            $query->orderBy('orden')->with('texts');
         }]);
 
         // Cargar idiomas activos para el modal de edición
         $idiomasActivos = \App\Models\Idioma::where('activo', true)->orderBy('orden')->get();
+        $idiomaPrincipal = $idiomasActivos->firstWhere('es_principal', true);
         
         // Debug temporal
         \Log::info('Galería: ' . $gallery->nombre . ', Idiomas activos: ' . $idiomasActivos->count());
 
-        return view('admin.galleries.show', compact('gallery', 'idiomasActivos'));
+    return view('admin.galleries.show', compact('gallery', 'idiomasActivos', 'idiomaPrincipal'));
     }
 
     /**

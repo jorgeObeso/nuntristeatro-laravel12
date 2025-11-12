@@ -17,6 +17,11 @@ class SlideAdminController extends Controller
     public function __construct(ImageService $imageService)
     {
         $this->imageService = $imageService;
+
+        $this->middleware('permission:slides,mostrar')->only(['index', 'show']);
+        $this->middleware('permission:slides,crear')->only(['create', 'store']);
+        $this->middleware('permission:slides,editar')->only(['edit', 'update', 'updateOrder']);
+        $this->middleware('permission:slides,eliminar')->only(['destroy']);
     }
 
     /**

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class TipoContenido extends Model
 {
@@ -14,6 +15,7 @@ class TipoContenido extends Model
     protected $fillable = [
         'tipo_contenido',
         'icono',
+        'descripcion',
     ];
 
     /**
@@ -29,11 +31,27 @@ class TipoContenido extends Model
      */
     public static function tiposParaMenu()
     {
-        return self::whereIn('tipo_contenido', [
-            'Páginas',       // Páginas generales (antes "Contenido")
-            'Noticias',      // Noticias
-            'Entrevistas'    // Entrevistas
-        ])->get();
+        $permitidos = [
+            'pagina',
+            'paginas',
+            'contenido',
+            'noticia',
+            'noticias',
+            'entrevista',
+            'entrevistas',
+            'galeria',
+            'galerias',
+            'portada',
+            'multimedia'
+        ];
+
+        return self::all()
+            ->filter(function ($tipo) use ($permitidos) {
+                $slug = Str::slug($tipo->tipo_contenido);
+                return in_array($slug, $permitidos, true);
+            })
+            ->sortBy('tipo_contenido')
+            ->values();
     }
 
     /**

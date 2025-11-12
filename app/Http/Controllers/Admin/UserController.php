@@ -13,6 +13,14 @@ use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:usuarios,mostrar')->only(['index', 'show']);
+        $this->middleware('permission:usuarios,crear')->only(['create', 'store']);
+        $this->middleware('permission:usuarios,editar')->only(['edit', 'update']);
+        $this->middleware('permission:usuarios,eliminar')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

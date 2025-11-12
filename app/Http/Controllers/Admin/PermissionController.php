@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 class PermissionController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:permisos,mostrar')->only(['index', 'show']);
+        $this->middleware('permission:permisos,crear')->only(['create', 'store']);
+        $this->middleware('permission:permisos,editar')->only(['edit', 'update']);
+        $this->middleware('permission:permisos,eliminar')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

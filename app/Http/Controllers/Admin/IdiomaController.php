@@ -10,6 +10,14 @@ use Illuminate\Validation\Rule;
 
 class IdiomaController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:idiomas,mostrar')->only(['index', 'show']);
+        $this->middleware('permission:idiomas,crear')->only(['create', 'store']);
+        $this->middleware('permission:idiomas,editar')->only(['edit', 'update', 'updateOrder', 'toggleActive']);
+        $this->middleware('permission:idiomas,eliminar')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

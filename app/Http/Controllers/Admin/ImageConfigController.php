@@ -8,6 +8,14 @@ use Illuminate\Http\Request;
 
 class ImageConfigController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('permission:imagenes,mostrar')->only(['index']);
+        $this->middleware('permission:imagenes,crear')->only(['create', 'store']);
+        $this->middleware('permission:imagenes,editar')->only(['edit', 'update']);
+        $this->middleware('permission:imagenes,eliminar')->only(['destroy']);
+    }
+
     /**
      * Display a listing of the resource.
      */

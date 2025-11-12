@@ -30,19 +30,56 @@
                 </a>
             </div>
             <div class="col-md-6">
-                <form method="GET" class="d-flex">
-                    <select name="tipo" class="form-control mr-2" onchange="this.form.submit()">
-                        <option value="">Todos los tipos</option>
-                        <option value="pagina" {{ request('tipo') == 'pagina' ? 'selected' : '' }}>Páginas</option>
-                        <option value="noticia" {{ request('tipo') == 'noticia' ? 'selected' : '' }}>Noticias</option>
-                        <option value="entrevista" {{ request('tipo') == 'entrevista' ? 'selected' : '' }}>Entrevistas</option>
-                        <option value="galeria" {{ request('tipo') == 'galeria' ? 'selected' : '' }}>Galerías</option>
-                    </select>
-                    <input type="text" name="search" class="form-control mr-2" placeholder="Buscar por título..." value="{{ request('search') }}">
-                    <button type="submit" class="btn btn-secondary"><i class="fas fa-search"></i></button>
-                </form>
+                <div class="card">
+                    <div class="card-body p-3">
+                        <form method="GET" action="{{ route('admin.contents.index') }}" class="d-flex align-items-end">
+                            <div class="form-group mb-0 mr-2">
+                                <label for="tipo" class="form-label text-sm">Filtrar por tipo:</label>
+                                <select name="tipo" id="tipo" class="form-control form-control-sm">
+                                    <option value="">Todos los tipos</option>
+                                    @foreach($tiposContenido as $tipo)
+                                        <option value="{{ strtolower($tipo->tipo_contenido) }}" {{ request('tipo') == strtolower($tipo->tipo_contenido) ? 'selected' : '' }}>
+                                            {{ $tipo->tipo_contenido }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="form-group mb-0 mr-2 flex-grow-1">
+                                <label for="search" class="form-label text-sm">Buscar:</label>
+                                <input type="text" name="search" id="search" class="form-control form-control-sm" 
+                                       placeholder="Buscar por título..." value="{{ request('search') }}" 
+                                       autocomplete="off">
+                            </div>
+                            <div class="form-group mb-0">
+                                <button type="submit" class="btn btn-secondary btn-sm" title="Buscar">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                @if(request('search') || request('tipo'))
+                                    <a href="{{ route('admin.contents.index') }}" class="btn btn-outline-secondary btn-sm ml-1" title="Limpiar filtros">
+                                        <i class="fas fa-times"></i>
+                                    </a>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
+
+        @if(request('search') || request('tipo'))
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                Resultados filtrados: 
+                @if(request('search'))
+                    búsqueda "<strong>{{ request('search') }}</strong>"
+                @endif
+                @if(request('tipo'))
+                    @if(request('search')) y @endif
+                    tipo "<strong>{{ ucfirst(request('tipo')) }}</strong>"
+                @endif
+                <span class="float-right">{{ $contents->total() }} resultado(s) encontrado(s)</span>
+            </div>
+        @endif
 
         <!-- Tabla de contenidos -->
         <div class="card">

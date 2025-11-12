@@ -54,27 +54,35 @@
             </ul>
 
             <!-- Right navbar links -->
-            <ul class="navbar-nav ml-auto">
+            <ul class="navbar-nav ms-auto">
                 <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#">
+                    <a class="nav-link dropdown-toggle" href="#" id="userMenu" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="fas fa-user"></i>
                         {{ Auth::user()->name ?? 'Usuario' }}
                     </a>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-user mr-2"></i> Perfil
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <form method="POST" action="{{ route('admin.logout') }}">
-                            @csrf
-                            <button type="submit" class="dropdown-item">
-                                <i class="fas fa-sign-out-alt mr-2"></i> Cerrar Sesión
-                            </button>
-                        </form>
-                    </div>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                        <li>
+                            <h6 class="dropdown-header">Sesión de usuario</h6>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="#">
+                                <i class="fas fa-user me-2"></i> Perfil
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item text-danger" href="#" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                                <i class="fas fa-sign-out-alt me-2"></i> Cerrar sesión
+                            </a>
+                        </li>
+                    </ul>
                 </li>
             </ul>
         </nav>
+
+        <form id="logout-form" method="POST" action="{{ route('admin.logout') }}" class="d-none">
+            @csrf
+        </form>
 
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
@@ -88,8 +96,31 @@
             <div class="sidebar">
                 <!-- Sidebar Menu -->
                 <nav class="mt-2">
+                    @php
+                        $user = Auth::user();
+                        $rolePermissions = $user && $user->role
+                            ? $user->role->permissions->mapWithKeys(static fn($perm) => [$perm->modulo . '.' . $perm->tipo_permiso => true])
+                            : collect();
+                        $hasPermission = static function (string $module, string $action) use ($user, $rolePermissions): bool {
+                            if (!$user) {
+                                return false;
+                            }
+                            if ($user->isAdmin()) {
+                                return true;
+                            }
+                            return (bool) $rolePermissions->get($module . '.' . $action, false);
+                        };
+                        $moduleAccess = static function (string $module) use ($hasPermission): bool {
+                            foreach (['mostrar', 'crear', 'editar', 'eliminar'] as $action) {
+                                if ($hasPermission($module, $action)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        };
+                        $canUserSystem = $moduleAccess('usuarios') || $moduleAccess('roles') || $moduleAccess('permisos');
+                    @endphp
                     <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-                        <!-- Dashboard -->
                         <li class="nav-item">
                             <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
                                 <i class="nav-icon fas fa-tachometer-alt"></i>
@@ -97,205 +128,223 @@
                             </a>
                         </li>
 
-                        <!-- Gestión de Contenidos -->
-                        <li class="nav-item {{ request()->routeIs('admin.contents.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.contents.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-newspaper"></i>
-                                <p>
-                                    Contenidos
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.contents.index') }}" class="nav-link {{ request()->routeIs('admin.contents.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Todos los Contenidos</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.contents.create') }}" class="nav-link {{ request()->routeIs('admin.contents.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Crear Contenido</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($moduleAccess('contenidos'))
+                            <li class="nav-item {{ request()->routeIs('admin.contents.*') || request()->routeIs('admin.tipos-contenido.*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs('admin.contents.*') || request()->routeIs('admin.tipos-contenido.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-newspaper"></i>
+                                    <p>
+                                        Contenidos
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('contenidos', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.contents.index') }}" class="nav-link {{ request()->routeIs('admin.contents.index') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Todos los Contenidos</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('contenidos', 'crear'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.contents.create') }}" class="nav-link {{ request()->routeIs('admin.contents.create') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Crear Contenido</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('contenidos', 'editar') || $hasPermission('contenidos', 'crear'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.tipos-contenido.index') }}" class="nav-link {{ request()->routeIs('admin.tipos-contenido.*') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Tipos de Contenido</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
 
-                        <!-- Galerías -->
-                        <li class="nav-item {{ request()->routeIs('admin.galleries.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-images"></i>
-                                <p>
-                                    Galerías
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.galleries.index') }}" class="nav-link {{ request()->routeIs('admin.galleries.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Todas las Galerías</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.galleries.create') }}" class="nav-link {{ request()->routeIs('admin.galleries.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Nueva Galería</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($moduleAccess('galerias'))
+                            <li class="nav-item {{ request()->routeIs('admin.galleries.*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-images"></i>
+                                    <p>
+                                        Galerías
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('galerias', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.galleries.index') }}" class="nav-link {{ request()->routeIs('admin.galleries.index') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Todas las Galerías</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('galerias', 'crear'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.galleries.create') }}" class="nav-link {{ request()->routeIs('admin.galleries.create') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Nueva Galería</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
 
-                        <!-- Idiomas -->
-                        <li class="nav-item {{ request()->routeIs('admin.idiomas.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.idiomas.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-language"></i>
-                                <p>
-                                    Idiomas
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.idiomas.index') }}" class="nav-link {{ request()->routeIs('admin.idiomas.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Gestionar Idiomas</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.idiomas.create') }}" class="nav-link {{ request()->routeIs('admin.idiomas.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Nuevo Idioma</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($moduleAccess('idiomas'))
+                            <li class="nav-item {{ request()->routeIs('admin.idiomas.*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs('admin.idiomas.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-language"></i>
+                                    <p>
+                                        Idiomas
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('idiomas', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.idiomas.index') }}" class="nav-link {{ request()->routeIs('admin.idiomas.index') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Gestionar Idiomas</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('idiomas', 'crear'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.idiomas.create') }}" class="nav-link {{ request()->routeIs('admin.idiomas.create') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Nuevo Idioma</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
 
-                        <!-- Menús -->
-                        <li class="nav-item {{ request()->routeIs('admin.menus.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.menus.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-bars"></i>
-                                <p>
-                                    Menús
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.menus.index') }}" class="nav-link">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Gestionar Menús</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($moduleAccess('menus'))
+                            <li class="nav-item {{ request()->routeIs('admin.menus.*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs('admin.menus.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-bars"></i>
+                                    <p>
+                                        Menús
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('menus', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.menus.index') }}" class="nav-link {{ request()->routeIs('admin.menus.index') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Gestionar Menús</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
 
-                        <!-- Slides -->
-                        <li class="nav-item {{ request()->routeIs('admin.slides.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.slides.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-images"></i>
-                                <p>
-                                    Slides
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.slides.index') }}" class="nav-link {{ request()->routeIs('admin.slides.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Gestionar Slides</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.slides.create') }}" class="nav-link {{ request()->routeIs('admin.slides.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Crear Slide</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($moduleAccess('slides'))
+                            <li class="nav-item {{ request()->routeIs('admin.slides.*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs('admin.slides.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-images"></i>
+                                    <p>
+                                        Slides
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('slides', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.slides.index') }}" class="nav-link {{ request()->routeIs('admin.slides.index') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Gestionar Slides</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('slides', 'crear'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.slides.create') }}" class="nav-link {{ request()->routeIs('admin.slides.create') ? 'active' : '' }}">
+                                                <i class="far fa-circle nav-icon"></i>
+                                                <p>Crear Slide</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
 
-                        <!-- Configuración -->
-                        <li class="nav-item {{ request()->routeIs('admin.image-configs.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-cogs"></i>
-                                <p>
-                                    Configuración
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.image-configs.index') }}" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">
-                                        <i class="far fa-image nav-icon"></i>
-                                        <p>Configuración de Imágenes</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($moduleAccess('imagenes'))
+                            <li class="nav-item {{ request()->routeIs('admin.image-configs.*') ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-cogs"></i>
+                                    <p>
+                                        Configuración
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('imagenes', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.image-configs.index') }}" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">
+                                                <i class="far fa-image nav-icon"></i>
+                                                <p>Configuración de Imágenes</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
 
-                        <!-- Idiomas -->
-                        <li class="nav-item {{ request()->routeIs('admin.idiomas.*') ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs('admin.idiomas.*') ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-language"></i>
-                                <p>
-                                    Idiomas
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.idiomas.index') }}" class="nav-link {{ request()->routeIs('admin.idiomas.index') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Gestionar Idiomas</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.idiomas.create') }}" class="nav-link {{ request()->routeIs('admin.idiomas.create') ? 'active' : '' }}">
-                                        <i class="far fa-circle nav-icon"></i>
-                                        <p>Crear Idioma</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
-
-                        <!-- Usuarios y Permisos -->
-                        <li class="nav-item {{ request()->routeIs(['admin.users.*', 'admin.roles.*', 'admin.permissions.*']) ? 'menu-open' : '' }}">
-                            <a href="#" class="nav-link {{ request()->routeIs(['admin.users.*', 'admin.roles.*', 'admin.permissions.*']) ? 'active' : '' }}">
-                                <i class="nav-icon fas fa-users-cog"></i>
-                                <p>
-                                    Sistema de Usuarios
-                                    <i class="right fas fa-angle-left"></i>
-                                </p>
-                            </a>
-                            <ul class="nav nav-treeview">
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                                        <i class="fas fa-user nav-icon"></i>
-                                        <p>Usuarios</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
-                                        <i class="fas fa-user-tag nav-icon"></i>
-                                        <p>Roles</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
-                                        <i class="fas fa-key nav-icon"></i>
-                                        <p>Permisos</p>
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a href="{{ route('admin.roles.permission-matrix') }}" class="nav-link {{ request()->routeIs('admin.roles.permission-matrix*') ? 'active' : '' }}">
-                                        <i class="fas fa-table nav-icon"></i>
-                                        <p>Matriz de Permisos</p>
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                        @if($canUserSystem)
+                            <li class="nav-item {{ request()->routeIs(['admin.users.*', 'admin.roles.*', 'admin.permissions.*']) ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs(['admin.users.*', 'admin.roles.*', 'admin.permissions.*']) ? 'active' : '' }}">
+                                    <i class="nav-icon fas fa-users-cog"></i>
+                                    <p>
+                                        Sistema de Usuarios
+                                        <i class="right fas fa-angle-left"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview">
+                                    @if($hasPermission('usuarios', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.users.index') }}" class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                                                <i class="fas fa-user nav-icon"></i>
+                                                <p>Usuarios</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('roles', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.roles.index') }}" class="nav-link {{ request()->routeIs('admin.roles.*') ? 'active' : '' }}">
+                                                <i class="fas fa-user-tag nav-icon"></i>
+                                                <p>Roles</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('permisos', 'mostrar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.permissions.index') }}" class="nav-link {{ request()->routeIs('admin.permissions.*') ? 'active' : '' }}">
+                                                <i class="fas fa-key nav-icon"></i>
+                                                <p>Permisos</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('roles', 'mostrar') || $hasPermission('roles', 'editar'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.roles.permission-matrix') }}" class="nav-link {{ request()->routeIs('admin.roles.permission-matrix*') ? 'active' : '' }}">
+                                                <i class="fas fa-table nav-icon"></i>
+                                                <p>Matriz de Permisos</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            </li>
+                        @endif
                     </ul>
                 </nav>
             </div>
@@ -365,6 +414,7 @@
     <!-- TinyMCE Configuration -->
     <script src="{{ asset('js/tinymce-config.js') }}"></script>
     
+    @yield('scripts')
     @stack('scripts')
 </body>
 </html>

@@ -41,14 +41,18 @@
                                         <label for="tipo_contenido">Tipo de Contenido *</label>
                                         <select name="tipo_contenido" id="tipo_contenido" class="form-control @error('tipo_contenido') is-invalid @enderror" required>
                                             <option value="">Seleccionar tipo</option>
-                                            <option value="pagina" {{ old('tipo_contenido', $content->tipo_contenido) == 'pagina' ? 'selected' : '' }}>Página</option>
-                                            <option value="noticia" {{ old('tipo_contenido', $content->tipo_contenido) == 'noticia' ? 'selected' : '' }}>Noticia</option>
-                                            <option value="entrevista" {{ old('tipo_contenido', $content->tipo_contenido) == 'entrevista' ? 'selected' : '' }}>Entrevista</option>
-                                            <option value="galeria" {{ old('tipo_contenido', $content->tipo_contenido) == 'galeria' ? 'selected' : '' }}>Galería</option>
+                                            @foreach($tiposContenido as $tipo)
+                                                <option value="{{ strtolower($tipo->tipo_contenido) }}" {{ old('tipo_contenido', $content->tipo_contenido) == strtolower($tipo->tipo_contenido) ? 'selected' : '' }}>
+                                                    {{ $tipo->tipo_contenido }}
+                                                </option>
+                                            @endforeach
                                         </select>
                                         @error('tipo_contenido')
                                             <span class="invalid-feedback">{{ $message }}</span>
                                         @enderror
+                                        <small class="form-text text-muted">
+                                            Los tipos se gestionan desde <a href="{{ route('admin.tipos-contenido.index') }}" target="_blank">Tipos de Contenido</a>
+                                        </small>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
@@ -331,8 +335,8 @@
                             <div class="form-group">
                                 <label for="actions">Acciones Adicionales</label>
                                 <textarea name="actions" id="actions" class="form-control" rows="3" 
-                                          placeholder="JSON de acciones adicionales">{{ old('actions', $content->actions) }}</textarea>
-                                <small class="form-text text-muted">Opcional: JSON con acciones especiales</small>
+                                          placeholder="Datos javascript control campañas">{{ old('actions', $content->actions) }}</textarea>
+                                <small class="form-text text-muted">Datos javascript control campañas</small>
                             </div>
                         </div>
                     </div>

@@ -224,20 +224,24 @@ Route::middleware(['auth'])->group(function () {
         // Idiomas
         Route::resource('idiomas', IdiomaController::class);
         Route::post('idiomas/update-order', [IdiomaController::class, 'updateOrder'])->name('idiomas.update-order');
+    Route::post('idiomas/{idioma}/toggle-active', [IdiomaController::class, 'toggleActive'])->name('idiomas.toggle-active');
         
         // Contenido
         Route::resource('contents', ContentAdminController::class);
+        
+        // Tipos de contenido
+        Route::resource('tipos-contenido', \App\Http\Controllers\Admin\TipoContenidoController::class);
         
         // Configuración de imágenes
         Route::resource('image-configs', ImageConfigController::class);
         
         // Galerías
-        Route::resource('galleries', AdminGalleryController::class);
-        Route::post('galleries/{gallery}/images', [AdminGalleryController::class, 'storeImage'])->name('galleries.images.store');
-        Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'destroyImage'])->name('galleries.images.destroy');
-        Route::post('galleries/{gallery}/images/{image}/text', [AdminGalleryController::class, 'storeImageText'])->name('galleries.images.text.store');
-        Route::put('galleries/{gallery}/images/{image}/text/{text}', [AdminGalleryController::class, 'updateImageText'])->name('galleries.images.text.update');
-        Route::delete('galleries/{gallery}/images/{image}/text/{text}', [AdminGalleryController::class, 'destroyImageText'])->name('galleries.images.text.destroy');
+    Route::resource('galleries', AdminGalleryController::class);
+    Route::post('galleries/{gallery}/images', [AdminGalleryController::class, 'uploadImages'])->name('galleries.images.upload');
+    Route::post('galleries/{gallery}/update-order', [AdminGalleryController::class, 'updateImageOrder'])->name('galleries.images.update-order');
+    Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'deleteImage'])->name('galleries.images.delete');
+    Route::get('gallery-images/{image}/texts', [AdminGalleryController::class, 'getImageTexts'])->name('gallery-images.texts.show');
+    Route::post('gallery-images/{image}/texts', [AdminGalleryController::class, 'saveImageTexts'])->name('gallery-images.texts.save');
         
         // Menús
         Route::resource('menus', MenuAdminController::class);

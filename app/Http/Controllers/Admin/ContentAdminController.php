@@ -21,6 +21,11 @@ class ContentAdminController extends Controller
     public function __construct(ImageService $imageService)
     {
         $this->imageService = $imageService;
+
+        $this->middleware('permission:contenidos,mostrar')->only(['index', 'show']);
+        $this->middleware('permission:contenidos,crear')->only(['create', 'store', 'uploadImage']);
+        $this->middleware('permission:contenidos,editar')->only(['edit', 'update']);
+        $this->middleware('permission:contenidos,eliminar')->only(['destroy']);
     }
 
     /**
@@ -31,20 +36,29 @@ class ContentAdminController extends Controller
         $query = Content::with(['textos.idioma', 'galeria']);
         
         // Filtrar por tipo si se especifica
-        if ($request->has('tipo')) {
+        if ($request->has('tipo') && $request->tipo) {
             $query->where('tipo_contenido', $request->tipo);
         }
         
-        // Búsqueda por título
-        if ($request->has('search') && $request->search) {
-            $query->whereHas('textos', function($q) use ($request) {
-                $q->where('titulo', 'like', '%' . $request->search . '%');
+        // Búsqueda por título, subtítulo, resumen o contenido
+        if ($request->has('search') && trim($request->search)) {
+            $searchTerm = trim($request->search);
+            $query->whereHas('textos', function($q) use ($searchTerm) {
+                $q->where(function($q2) use ($searchTerm) {
+                    $q2->where('titulo', 'like', '%' . $searchTerm . '%')
+                       ->orWhere('subtitulo', 'like', '%' . $searchTerm . '%')
+                       ->orWhere('resumen', 'like', '%' . $searchTerm . '%')
+                       ->orWhere('contenido', 'like', '%' . $searchTerm . '%');
+                });
             });
         }
         
         $contents = $query->orderBy('created_at', 'desc')->paginate(15);
         
-        return view('admin.contents.index', compact('contents'));
+        // Obtener tipos de contenido para el filtro
+        $tiposContenido = TipoContenido::all();
+        
+        return view('admin.contents.index', compact('contents', 'tiposContenido'));
     }
 
     /**
@@ -68,14 +82,20 @@ class ContentAdminController extends Controller
     public function store(Request $request)
     {
         try {
+            // Obtener tipos válidos dinámicamente
+            $tiposValidos = TipoContenido::pluck('tipo_contenido')->map(function($tipo) {
+                return strtolower($tipo);
+            })->implode(',');
+            
             $request->validate([
-                'tipo_contenido' => 'required|in:pagina,noticia,entrevista',
+                'tipo_contenido' => 'required|in:' . $tiposValidos,
                 'fecha_publicacion' => 'nullable|date',
                 'lugar' => 'nullable|string|max:100',
                 'portada' => 'nullable|boolean',
                 'textos' => 'required|array',
                 // Solo validar que exista al menos un título y contenido (no específico por idioma)
                 'textos.*.titulo' => 'nullable|string|max:255',
+                'textos.*.resumen' => 'nullable|string',
                 'textos.*.contenido' => 'nullable|string',
                 'textos.*.slug' => 'nullable|string|max:255|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
                 'textos.*.imagen_alt' => 'nullable|string|max:255',
@@ -211,8 +231,13 @@ class ContentAdminController extends Controller
      */
     public function update(Request $request, Content $content)
     {
+        // Obtener tipos válidos dinámicamente
+        $tiposValidos = TipoContenido::pluck('tipo_contenido')->map(function($tipo) {
+            return strtolower($tipo);
+        })->implode(',');
+        
         $request->validate([
-            'tipo_contenido' => 'required|in:pagina,noticia,entrevista',
+            'tipo_contenido' => 'required|in:' . $tiposValidos,
             'fecha_publicacion' => 'nullable|date',
             'lugar' => 'nullable|string|max:100',
             'portada' => 'nullable|boolean',
@@ -222,6 +247,7 @@ class ContentAdminController extends Controller
             'eliminar_imagenes' => 'nullable|boolean',
             'textos' => 'required|array',
             'textos.*.titulo' => 'nullable|string|max:255',
+            'textos.*.resumen' => 'nullable|string',
             'textos.*.contenido' => 'nullable|string',
             'textos.*.slug' => 'nullable|string|max:255|regex:/^[a-z0-9]+(?:-[a-z0-9]+)*$/',
             'textos.*.imagen_alt' => 'nullable|string|max:255',

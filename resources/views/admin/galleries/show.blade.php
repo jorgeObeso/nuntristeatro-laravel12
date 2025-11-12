@@ -40,7 +40,7 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form id="upload-form" action="{{ route('admin.galleries.upload-images', $gallery) }}" method="POST" enctype="multipart/form-data">
+                    <form id="upload-form" action="{{ route('admin.galleries.images.upload', $gallery) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         <div class="form-group mb-3">
                             <label for="images" class="form-label">Seleccionar Imágenes</label>
@@ -140,18 +140,36 @@
                                             </div>
                                         </div>
                                         
+                                        @php
+                                            $principalText = isset($idiomaPrincipal)
+                                                ? $image->texts->firstWhere('idioma_id', $idiomaPrincipal->id)
+                                                : null;
+                                            $originalName = $image->metadatos['original_name'] ?? null;
+                                            $displayTitle = $image->titulo
+                                                ?: ($principalText->titulo ?? $originalName);
+                                            $principalAlt = $principalText->alt_text ?? null;
+                                            $baseAlt = $image->getOriginal('alt_text');
+                                            $displayAlt = $principalAlt ?: $baseAlt;
+                                        @endphp
                                         <div class="card-body">
-                                            <div class="orden-display" style="font-size: 12px; margin-bottom: 4px;">
+                                            <div class="orden-display" style="font-size: 12px; margin-bottom: 6px;">
                                                 Orden: {{ $image->orden }}
                                                 @if($loop->first)
                                                     <span class="badge bg-success ms-1" style="font-size: 9px;">Portada</span>
                                                 @endif
                                             </div>
-                                            @if($image->alt_text)
-                                                <p class="card-text mb-0">
-                                                    <small class="text-muted" style="font-size: 11px;">{{ Str::limit($image->alt_text, 30) }}</small>
-                                                </p>
+                                            @if($displayTitle)
+                                                <h6 class="image-title mb-1" title="{{ $displayTitle }}">
+                                                    {{ \Illuminate\Support\Str::limit($displayTitle, 60) }}
+                                                </h6>
                                             @endif
+                                            <p class="image-alt text-muted small mb-0" title="{{ $displayAlt ?? 'Sin texto ALT configurado' }}">
+                                                @if($displayAlt)
+                                                    ALT: {{ \Illuminate\Support\Str::limit($displayAlt, 80) }}
+                                                @else
+                                                    <span class="text-warning">Sin texto ALT configurado</span>
+                                                @endif
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -347,6 +365,17 @@
     .image-card .card-body {
         padding: 10px 12px;
         font-size: 13px;
+    }
+
+    .image-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+
+    .image-alt {
+        font-size: 12px;
+        color: #6c757d;
     }
     
     .image-container {
@@ -710,11 +739,17 @@
 let sortMode = false;
 let sortableInstance = null;
 
+// Endpoints for gallery AJAX operations
+const uploadUrl = '{{ route('admin.galleries.images.upload', $gallery) }}';
+const updateOrderUrl = '{{ route('admin.galleries.images.update-order', $gallery) }}';
+const deleteImageBaseUrl = '{{ url('admin/galleries/' . $gallery->id . '/images') }}';
+const imageTextsBaseUrl = '{{ url('admin/gallery-images') }}';
+
 // Función principal para probar la conexión
 function testConnection() {
     console.log('🧪 Probando conexión al servidor...');
     
-    fetch('/admin/galleries/{{ $gallery->id }}/update-order', {
+    fetch(updateOrderUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -758,7 +793,7 @@ function cambiarOrden(imageId, nuevoOrden) {
     }
     
     // Enviar al servidor
-    fetch('/admin/galleries/{{ $gallery->id }}/update-order', {
+    fetch(updateOrderUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -898,7 +933,7 @@ function sendBulkOrderUpdate(updates) {
     const container = document.querySelector('.sortable-container');
     container.style.opacity = '0.7';
     
-    fetch('/admin/galleries/{{ $gallery->id }}/update-order', {
+    fetch(updateOrderUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1078,7 +1113,7 @@ document.getElementById('upload-form').addEventListener('submit', function(e) {
     uploadBtn.disabled = true;
     uploadBtn.textContent = 'Subiendo...';
     
-    fetch(this.action, {
+    fetch(uploadUrl, {
         method: 'POST',
         body: formData
     })
@@ -1111,7 +1146,7 @@ function deleteImage(imageId) {
             imageElement.style.pointerEvents = 'none';
         }
         
-        fetch(`/admin/galleries/{{ $gallery->id }}/images/${imageId}`, {
+    fetch(`${deleteImageBaseUrl}/${imageId}`, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
@@ -1234,7 +1269,7 @@ function editImageTexts(imageId) {
     }
     
     // Obtener datos de la imagen
-    fetch(`/admin/gallery-images/${imageId}/texts`)
+    fetch(`${imageTextsBaseUrl}/${imageId}/texts`)
         .then(response => {
             console.log('📡 Respuesta recibida:', response.status);
             return response.json();
@@ -1282,7 +1317,7 @@ function saveImageTexts() {
     
     console.log('💾 Guardando textos multiidioma para imagen:', imageId);
     
-    fetch(`/admin/gallery-images/${imageId}/texts`, {
+    fetch(`${imageTextsBaseUrl}/${imageId}/texts`, {
         method: 'POST',
         body: formData,
         headers: {

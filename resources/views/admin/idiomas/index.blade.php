@@ -209,6 +209,8 @@
 <script>
 console.log('🌍 Script de gestión de idiomas cargado');
 
+const toggleActiveUrlTemplate = '{{ route('admin.idiomas.toggle-active', ['idioma' => '__ID__']) }}';
+
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar drag & drop
     const sortableElement = document.getElementById('sortable-idiomas');
@@ -268,12 +270,16 @@ function updateOrder() {
 }
 
 function toggleActiveState(idiomaId, activo) {
-    fetch(`{{ route("admin.idiomas.index") }}/${idiomaId}/toggle-active`, {
+    const toggleUrl = toggleActiveUrlTemplate.replace('__ID__', idiomaId);
+
+    fetch(toggleUrl, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        }
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({ activo: activo })
     })
     .then(response => response.json())
     .then(data => {
