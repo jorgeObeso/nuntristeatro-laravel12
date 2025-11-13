@@ -70,6 +70,30 @@ if (!function_exists('get_responsive_image_url')) {
 
 // ==================== HELPERS DE IDIOMAS ====================
 
+if (!function_exists('normalizar_etiqueta_idioma')) {
+    /**
+     * Normaliza etiquetas de idioma procedentes de rutas/BD.
+     */
+    function normalizar_etiqueta_idioma(?string $etiqueta): ?string
+    {
+        if ($etiqueta === null) {
+            return null;
+        }
+
+        return $etiqueta === 'as' ? 'ast' : $etiqueta;
+    }
+}
+
+if (!function_exists('etiqueta_para_ruta_idioma')) {
+    /**
+     * Convierte una etiqueta canónica al valor esperado en las rutas.
+     */
+    function etiqueta_para_ruta_idioma(string $etiqueta): string
+    {
+        return $etiqueta === 'ast' ? 'as' : $etiqueta;
+    }
+}
+
 if (!function_exists('idiomas_activos')) {
     /**
      * Obtener todos los idiomas activos del sistema
@@ -100,12 +124,12 @@ if (!function_exists('idioma_actual')) {
         $idioma = request()->route('idioma');
         
         if ($idioma) {
-            return $idioma;
+            return normalizar_etiqueta_idioma($idioma);
         }
         
         // Fallback al idioma principal
         $principal = idioma_principal();
-        return $principal ? $principal->etiqueta : 'es';
+        return $principal ? normalizar_etiqueta_idioma($principal->etiqueta) : 'es';
     }
 }
 
@@ -119,13 +143,13 @@ if (!function_exists('url_idioma')) {
         $parametros = request()->route()->parameters();
         
         // Actualizar el parámetro de idioma
-        $parametros['idioma'] = $etiquetaIdioma;
+        $parametros['idioma'] = etiqueta_para_ruta_idioma($etiquetaIdioma);
         
         try {
             return route($rutaActual, $parametros);
         } catch (\Exception $e) {
             // Fallback a la página principal del idioma
-            return route('inicio', ['idioma' => $etiquetaIdioma]);
+            return route('inicio', ['idioma' => etiqueta_para_ruta_idioma($etiquetaIdioma)]);
         }
     }
 }
@@ -169,7 +193,66 @@ if (!function_exists('es_idioma_actual')) {
      */
     function es_idioma_actual(string $etiqueta): bool
     {
-        return idioma_actual() === $etiqueta;
+        return idioma_actual() === normalizar_etiqueta_idioma($etiqueta);
+    }
+}
+
+if (!function_exists('menu_url')) {
+    /**
+     * Obtener la URL adecuada para un ítem de menú considerando el idioma actual.
+     */
+    function menu_url(\App\Models\Menu $menu, ?string $idiomaEtiqueta = null): string
+    {
+        $menu->loadMissing(['textos.idioma', 'content.textos.idioma']);
+
+        $idiomaEtiqueta = normalizar_etiqueta_idioma($idiomaEtiqueta ?? idioma_actual());
+        $idiomaRuta = etiqueta_para_ruta_idioma($idiomaEtiqueta ?? 'es');
+
+        switch ($menu->tipo_enlace) {
+            case 'url_externa':
+                return $menu->url_externa ?: $menu->url ?: '#';
+
+            case 'ancla':
+            case 'anchor':
+                return $menu->url ? ('#' . ltrim($menu->url, '#')) : '#';
+
+            case 'contenido':
+                if ($menu->content) {
+                    $textoMenu = $menu->textos->first(function ($texto) use ($idiomaEtiqueta) {
+                        $etiquetaTexto = normalizar_etiqueta_idioma(optional($texto->idioma)->etiqueta);
+                        return $texto->activo && $etiquetaTexto === $idiomaEtiqueta;
+                    });
+
+                    $slug = $textoMenu?->slug;
+
+                    if (!$slug) {
+                        $textoContenido = $menu->content->textos->first(function ($texto) use ($idiomaEtiqueta) {
+                            $etiquetaTexto = normalizar_etiqueta_idioma(optional($texto->idioma)->etiqueta);
+                            return $texto->activo && $etiquetaTexto === $idiomaEtiqueta;
+                        }) ?? $menu->content->textos->first();
+
+                        $slug = $textoContenido?->slug;
+                    }
+
+                    if ($slug) {
+                        try {
+                            return route('contenido', [
+                                'idioma' => $idiomaRuta,
+                                'slug' => $slug,
+                            ]);
+                        } catch (\Throwable $e) {
+                            // Ignorar excepción y continuar con fallback.
+                        }
+                    }
+                }
+                break;
+        }
+
+        if (!empty($menu->url)) {
+            return $menu->url;
+        }
+
+        return '#';
     }
 }
 

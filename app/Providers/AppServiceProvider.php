@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
+use App\Models\Menu;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,15 @@ class AppServiceProvider extends ServiceProvider
         // Configurar rutas de redirección para autenticación
         $this->app['router']->middleware('auth')->group(function () {
             // Configuración manejada por middleware
+        });
+        // View composer para el menú del footer
+        View::composer('layouts.app', function ($view) {
+            $idioma = app()->getLocale();
+            $menuPrincipal = Menu::where('visible', true)
+                ->where('menu_pie', true)
+                ->orderBy('orden')
+                ->get();
+            $view->with('menuPrincipal', $menuPrincipal);
         });
     }
 }

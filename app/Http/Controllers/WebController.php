@@ -6,6 +6,7 @@ use App\Models\Idioma;
 use App\Models\Content;
 use App\Models\Menu;
 use App\Models\Configuracion;
+use App\Models\Slide;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
@@ -29,30 +30,67 @@ class WebController extends Controller
      */
     public function inicio($idioma)
     {
+        $idiomaNormalizado = normalizar_etiqueta_idioma($idioma) ?? 'es';
+        Session::put('idioma_actual', $idiomaNormalizado);
+
         // Obtener configuración general
         $configuracion = Configuracion::first();
         
         // Obtener menús principales
-        $menus = Menu::principal()->with('children')->get();
+        $menus = Menu::principal()
+            ->where('visible', true)
+            ->with([
+                'textos.idioma',
+                'content.textos.idioma',
+                'children' => function ($query) {
+                    $query->where('visible', true)
+                        ->with([
+                            'textos.idioma',
+                            'content.textos.idioma',
+                        ]);
+                },
+            ])
+            ->get();
         
         // Obtener contenido de inicio
-        $contenidoInicio = Content::where('actions', 'inicio')->first();
+        $contenidoInicio = Content::where('actions', 'inicio')
+            ->with(['textos.idioma'])
+            ->first();
         
         // Obtener noticias de portada
         $noticiasPortada = Content::noticias()
                                  ->portada()
-                                 ->with(['textos' => function($query) use ($idioma) {
-                                     $query->byIdioma($idioma)->visible();
+                                 ->with(['textos' => function($query) use ($idiomaNormalizado) {
+                                     $query->byIdioma($idiomaNormalizado)->visible();
                                  }])
                                  ->orderBy('fecha_publicacion', 'desc')
                                  ->limit(6)
                                  ->get();
+
+
+        // Obtener slides activos
+        $slides = Slide::query()
+            ->visible()
+            ->ordered()
+            ->with(['translations.idioma'])
+            ->get();
+
+        // Galerías activas para el carrusel
+        $galerias = \App\Models\Gallery::activas()
+            ->with(['images' => function($q) {
+                $q->active();
+            }])
+            ->orderBy('id', 'desc')
+            ->limit(1)
+            ->get();
         
         return view('web.inicio', compact(
             'configuracion', 
             'menus', 
             'contenidoInicio', 
-            'noticiasPortada'
+            'noticiasPortada',
+            'slides',
+            'galerias'
         ));
     }
 
@@ -62,14 +100,29 @@ class WebController extends Controller
     public function contenido($idioma, $slug)
     {
         // Buscar el contenido por slug
-        $contenido = Content::whereHas('textos', function($query) use ($slug, $idioma) {
-            $query->bySlug($slug)->byIdioma($idioma)->visible();
-        })->with(['textos' => function($query) use ($idioma) {
-            $query->byIdioma($idioma)->visible();
+        $idiomaNormalizado = normalizar_etiqueta_idioma($idioma) ?? 'es';
+
+        $contenido = Content::whereHas('textos', function($query) use ($slug, $idiomaNormalizado) {
+            $query->bySlug($slug)->byIdioma($idiomaNormalizado)->visible();
+        })->with(['textos' => function($query) use ($idiomaNormalizado) {
+            $query->byIdioma($idiomaNormalizado)->visible();
         }, 'galeria'])->firstOrFail();
         
         $configuracion = Configuracion::first();
-        $menus = Menu::principal()->with('children')->get();
+        $menus = Menu::principal()
+            ->where('visible', true)
+            ->with([
+                'textos.idioma',
+                'content.textos.idioma',
+                'children' => function ($query) {
+                    $query->where('visible', true)
+                        ->with([
+                            'textos.idioma',
+                            'content.textos.idioma',
+                        ]);
+                },
+            ])
+            ->get();
         
         return view('web.contenido', compact('contenido', 'configuracion', 'menus'));
     }
@@ -79,15 +132,30 @@ class WebController extends Controller
      */
     public function noticias($idioma)
     {
+        $idiomaNormalizado = normalizar_etiqueta_idioma($idioma) ?? 'es';
+
         $noticias = Content::noticias()
-                          ->with(['textos' => function($query) use ($idioma) {
-                              $query->byIdioma($idioma)->visible();
+                          ->with(['textos' => function($query) use ($idiomaNormalizado) {
+                              $query->byIdioma($idiomaNormalizado)->visible();
                           }])
                           ->orderBy('fecha_publicacion', 'desc')
                           ->paginate(10);
         
         $configuracion = Configuracion::first();
-        $menus = Menu::principal()->with('children')->get();
+        $menus = Menu::principal()
+            ->where('visible', true)
+            ->with([
+                'textos.idioma',
+                'content.textos.idioma',
+                'children' => function ($query) {
+                    $query->where('visible', true)
+                        ->with([
+                            'textos.idioma',
+                            'content.textos.idioma',
+                        ]);
+                },
+            ])
+            ->get();
         
         return view('web.noticias', compact('noticias', 'configuracion', 'menus'));
     }

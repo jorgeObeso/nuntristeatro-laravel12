@@ -209,16 +209,8 @@ class Slide extends Model
      */
     private function getCurrentLanguageId(): int
     {
-        $currentLocale = App::getLocale();
-        
-        // Mapear locales a etiquetas de idiomas
-        $localeMap = [
-            'es' => 'es',
-            'ast' => 'ast', 
-            'en' => 'en'
-        ];
-        
-        $etiqueta = $localeMap[$currentLocale] ?? 'es'; // Default a español
+        $currentLocale = normalizar_etiqueta_idioma(App::getLocale());
+        $etiqueta = $currentLocale ?: 'es';
         $idioma = \App\Models\Idioma::where('etiqueta', $etiqueta)->first();
         
         // Si no encuentra por etiqueta, usar el idioma principal

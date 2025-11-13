@@ -21,39 +21,45 @@ class SetLocale
         try {
             // Obtener el idioma de la URL
             $locale = $request->segment(1);
-            
+
             // Validar que el locale sea una cadena válida
             if (!is_string($locale) || empty($locale)) {
                 $locale = null;
             }
-            
+
+            $idiomaEtiqueta = normalizar_etiqueta_idioma($locale);
+
             // Verificar si el idioma existe en la base de datos
             $idioma = null;
-            if ($locale) {
-                $idioma = Idioma::where('etiqueta', $locale)
+            if ($idiomaEtiqueta) {
+                $idioma = Idioma::where('etiqueta', $idiomaEtiqueta)
                                 ->where('activo', true)
                                 ->first();
             }
-            
+
             if ($idioma) {
                 // Establecer el idioma en la aplicación y la sesión
-                App::setLocale($locale);
-                Session::put('idioma', $locale);
+                App::setLocale($idiomaEtiqueta);
+                Session::put('idioma', etiqueta_para_ruta_idioma($idiomaEtiqueta));
+                Session::put('idioma_actual', $idiomaEtiqueta);
                 Session::put('idioma_id', $idioma->id);
             } else {
                 // Si no se encuentra, usar el idioma por defecto
                 $idiomaDefecto = Idioma::where('es_principal', true)
                                        ->where('activo', true)
                                        ->first();
-                
+
                 if ($idiomaDefecto) {
-                    App::setLocale($idiomaDefecto->etiqueta);
-                    Session::put('idioma', $idiomaDefecto->etiqueta);
+                    $etiquetaDefecto = normalizar_etiqueta_idioma($idiomaDefecto->etiqueta);
+                    App::setLocale($etiquetaDefecto ?? 'es');
+                    Session::put('idioma', etiqueta_para_ruta_idioma($etiquetaDefecto ?? 'es'));
+                    Session::put('idioma_actual', $etiquetaDefecto ?? 'es');
                     Session::put('idioma_id', $idiomaDefecto->id);
                 } else {
                     // Fallback si no hay idiomas configurados
                     App::setLocale('es');
                     Session::put('idioma', 'es');
+                    Session::put('idioma_actual', 'es');
                     Session::put('idioma_id', 1);
                 }
             }
@@ -62,6 +68,7 @@ class SetLocale
             \Log::error('Error en SetLocale middleware: ' . $e->getMessage());
             App::setLocale('es');
             Session::put('idioma', 'es');
+            Session::put('idioma_actual', 'es');
             Session::put('idioma_id', 1);
         }
         
