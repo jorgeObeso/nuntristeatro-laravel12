@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('textos_idiomas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('idioma_id')->constrained('idiomas')->onDelete('cascade');
-            $table->foreignId('contenido_id')->constrained('contents')->onDelete('cascade');
-            $table->foreignId('tipo_contenido_id')->constrained('tipo_contenidos')->onDelete('cascade');
+            $table->foreignId('contenido_id')->nullable()->constrained('contents')->onDelete('cascade');
+            $table->foreignId('tipo_contenido_id')->nullable()->constrained('tipo_contenidos')->onDelete('cascade');
             $table->string('titulo')->nullable();
             $table->string('subtitulo')->nullable();
             $table->string('resumen')->nullable();

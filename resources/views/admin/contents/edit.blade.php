@@ -501,31 +501,15 @@
                 });
             });
 
-            // Configurar TinyMCE para cada idioma
-            @foreach($idiomas as $idioma)
-                console.log('📄 Inicializando editor para idioma: {{ $idioma->nombre }}');
-                
-                // Configurar TinyMCE para el contenido
-                if (typeof tinymce !== 'undefined') {
-                    tinymce.init({
-                        selector: '#textos_{{ $idioma->id }}_contenido',
-                        height: 400,
-                        menubar: false,
-                        plugins: [
-                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
-                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                            'insertdatetime', 'media', 'table', 'help', 'wordcount'
-                        ],
-                        toolbar: 'undo redo | formatselect | ' +
-                                'bold italic backcolor | alignleft aligncenter ' +
-                                'alignright alignjustify | bullist numlist outdent indent | ' +
-                                'removeformat | help',
-                        content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
-                        language: 'es'
-                    });
-                }
+            // Inicializar TinyMCE globalmente
+            if (typeof window.initTinyMCE === 'function') {
+                window.initTinyMCE();
+            } else {
+                console.warn('No se encontró window.initTinyMCE');
+            }
 
-                // Auto-generar slug cuando se escriba el título
+            // Auto-generar slug cuando se escriba el título
+            @foreach($idiomas as $idioma)
                 const tituloField = document.getElementById('textos_{{ $idioma->id }}_titulo');
                 if (tituloField) {
                     tituloField.addEventListener('input', function() {

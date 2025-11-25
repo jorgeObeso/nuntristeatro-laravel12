@@ -168,26 +168,23 @@ Route::get('/idioma/{idioma}', [WebController::class, 'cambiarIdioma'])->name('c
 Route::middleware(['locale'])->group(function () {
     // Página de inicio
     Route::get('/{idioma}', [WebController::class, 'inicio'])
-        ->where('idioma', '^(es|as)$')
         ->name('inicio');
-    
+
     // Noticias
     Route::get('/{idioma}/noticias', [WebController::class, 'noticias'])
-        ->where('idioma', '^(es|as)$')
         ->name('noticias');
-    
+
     // Galerías
     Route::get('/{idioma}/galerias', [GalleryController::class, 'index'])
-        ->where('idioma', '^(es|as)$')
         ->name('galleries.index');
-    
+
     Route::get('/{idioma}/galerias/{slug}', [GalleryController::class, 'show'])
-        ->where(['idioma' => '^(es|as)$', 'slug' => '[a-zA-Z0-9\-_]+'])
+        ->where(['slug' => '[a-zA-Z0-9\-_]+'])
         ->name('galleries.show');
-    
+
     // Contenido dinámico
     Route::get('/{idioma}/{slug}', [WebController::class, 'contenido'])
-        ->where(['idioma' => '^(es|as)$', 'slug' => '[a-zA-Z0-9\-_]+'])
+        ->where(['slug' => '[a-zA-Z0-9\-_]+'])
         ->name('contenido');
 });
 
@@ -213,6 +210,9 @@ Route::get('test/menu-create', function() {
 // Rutas de usuario autenticado
 Route::middleware(['auth'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
+        // Configuración de empresa
+        Route::get('configuracion-empresa', [\App\Http\Controllers\Admin\ConfiguracionEmpresaController::class, 'edit'])->name('configuracion_empresa.edit');
+        Route::put('configuracion-empresa', [\App\Http\Controllers\Admin\ConfiguracionEmpresaController::class, 'update'])->name('configuracion_empresa.update');
         // Dashboard
         Route::get('/', [AdminController::class, 'index'])->name('dashboard');
         
@@ -222,9 +222,9 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/logout', [AdminController::class, 'logout'])->name('logout');
         
         // Idiomas
-        Route::resource('idiomas', IdiomaController::class);
+        Route::resource('idiomas', IdiomaController::class)->parameters(['idiomas' => 'idioma_id']);
         Route::post('idiomas/update-order', [IdiomaController::class, 'updateOrder'])->name('idiomas.update-order');
-    Route::post('idiomas/{idioma}/toggle-active', [IdiomaController::class, 'toggleActive'])->name('idiomas.toggle-active');
+    Route::post('idiomas/{idioma_id}/toggle-active', [IdiomaController::class, 'toggleActive'])->name('idiomas.toggle-active');
         
         // Contenido
         Route::resource('contents', ContentAdminController::class);
@@ -278,4 +278,9 @@ Route::middleware(['auth'])->group(function () {
         
         Route::resource('users', UserController::class);
     });
+});
+
+// Debug de textos
+Route::get('/debug-textos', function() {
+    return \App\Models\TextoIdioma::select('id', 'slug', 'visible', 'contenido_id')->get();
 });

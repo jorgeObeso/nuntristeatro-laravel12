@@ -104,17 +104,25 @@ class MenuAdminController extends Controller
         // Crear textos en diferentes idiomas
         foreach ($request->textos as $idiomaId => $textoData) {
             if (!empty($textoData['titulo'])) {
-                // Generar slug único para el menú
-                $baseSlug = Str::slug($textoData['titulo']);
-                if (empty($baseSlug)) {
-                    $baseSlug = 'menu-' . $menu->id . '-' . $idiomaId;
+                // Si el menú es de tipo contenido y tiene content_id, usar el slug del contenido en ese idioma
+                $slug = null;
+                if ($menu->tipo_enlace === 'contenido' && $menu->content_id) {
+                    $contenido = \App\Models\Content::find($menu->content_id);
+                    if ($contenido) {
+                        $textoContenido = $contenido->textos()->where('idioma_id', $idiomaId)->first();
+                        $slug = $textoContenido?->slug;
+                    }
                 }
-                
-                // Asegurar que el slug sea único para este menú e idioma
-                $slug = $baseSlug . '-menu-' . $menu->id;
-
+                // Si no hay slug de contenido, usar el generado por el título del menú
+                if (empty($slug)) {
+                    $baseSlug = Str::slug($textoData['titulo']);
+                    if (empty($baseSlug)) {
+                        $baseSlug = 'menu-' . $menu->id . '-' . $idiomaId;
+                    }
+                    $slug = $baseSlug . '-menu-' . $menu->id;
+                }
                 TextoIdioma::create([
-                    'objeto_type' => 'App\Models\Menu',
+                    'objeto_type' => 'App\\Models\\Menu',
                     'objeto_id' => $menu->id,
                     'idioma_id' => $idiomaId,
                     'titulo' => $textoData['titulo'],
@@ -200,30 +208,38 @@ class MenuAdminController extends Controller
                 $texto = $menu->textos()
                              ->where('idioma_id', $idiomaId)
                              ->first();
-
-                // Generar slug único para el menú
-                $baseSlug = Str::slug($textoData['titulo']);
-                if (empty($baseSlug)) {
-                    $baseSlug = 'menu-' . $menu->id . '-' . $idiomaId;
+                // Si el menú es de tipo contenido y tiene content_id, usar el slug del contenido en ese idioma
+                $slug = null;
+                if ($menu->tipo_enlace === 'contenido' && $menu->content_id) {
+                    $contenido = \App\Models\Content::find($menu->content_id);
+                    if ($contenido) {
+                        $textoContenido = $contenido->textos()->where('idioma_id', $idiomaId)->first();
+                        $slug = $textoContenido?->slug;
+                    }
                 }
-                
-                // Asegurar que el slug sea único para este menú e idioma
-                $slug = $baseSlug . '-menu-' . $menu->id;
-
+                // Si no hay slug de contenido, usar el generado por el título del menú
+                if (empty($slug)) {
+                    $baseSlug = Str::slug($textoData['titulo']);
+                    if (empty($baseSlug)) {
+                        $baseSlug = 'menu-' . $menu->id . '-' . $idiomaId;
+                    }
+                    $slug = $baseSlug . '-menu-' . $menu->id;
+                }
                 $data = [
                     'titulo' => $textoData['titulo'],
                     'slug' => $slug,
                     'activo' => true,
                     'visible' => true,
                 ];
-
                 if ($texto) {
                     $texto->update($data);
                 } else {
                     TextoIdioma::create(array_merge($data, [
-                        'objeto_type' => 'App\Models\Menu',
+                        'objeto_type' => 'App\\Models\\Menu',
                         'objeto_id' => $menu->id,
                         'idioma_id' => $idiomaId,
+                        'tipo_contenido_id' => $menu->tipo_contenido_id,
+                        'contenido_id' => $menu->content_id,
                     ]));
                 }
             }

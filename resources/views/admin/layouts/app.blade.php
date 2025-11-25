@@ -1,5 +1,29 @@
 <!DOCTYPE html>
 <html lang="es">
+    @php
+        $user = Auth::user();
+        $rolePermissions = $user && $user->role
+            ? $user->role->permissions->mapWithKeys(static fn($perm) => [$perm->modulo . '.' . $perm->tipo_permiso => true])
+            : collect();
+        $hasPermission = static function (string $module, string $action = 'mostrar') use ($user, $rolePermissions): bool {
+            if (!$user) {
+                return false;
+            }
+            if (method_exists($user, 'isAdmin') && $user->isAdmin()) {
+                return true;
+            }
+            return (bool) $rolePermissions->get($module . '.' . $action, false);
+        };
+        $moduleAccess = static function (string $module) use ($hasPermission): bool {
+            foreach (['mostrar', 'crear', 'editar', 'eliminar'] as $action) {
+                if ($hasPermission($module, $action)) {
+                    return true;
+                }
+            }
+            return false;
+        };
+        $canUserSystem = $moduleAccess('usuarios') || $moduleAccess('roles') || $moduleAccess('permisos');
+    @endphp
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -101,7 +125,7 @@
                         $rolePermissions = $user && $user->role
                             ? $user->role->permissions->mapWithKeys(static fn($perm) => [$perm->modulo . '.' . $perm->tipo_permiso => true])
                             : collect();
-                        $hasPermission = static function (string $module, string $action) use ($user, $rolePermissions): bool {
+                        $hasPermission = static function (string $module, string $action = 'mostrar') use ($user, $rolePermissions): bool {
                             if (!$user) {
                                 return false;
                             }
@@ -279,8 +303,8 @@
                         @endif
 
                         @if($moduleAccess('imagenes'))
-                            <li class="nav-item {{ request()->routeIs('admin.image-configs.*') ? 'menu-open' : '' }}">
-                                <a href="#" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">
+                            <li class="nav-item {{ request()->routeIs(['admin.image-configs.*','admin.configuracion_empresa.*']) ? 'menu-open' : '' }}">
+                                <a href="#" class="nav-link {{ request()->routeIs(['admin.image-configs.*','admin.configuracion_empresa.*']) ? 'active' : '' }}">
                                     <i class="nav-icon fas fa-cogs"></i>
                                     <p>
                                         Configuración
@@ -293,6 +317,14 @@
                                             <a href="{{ route('admin.image-configs.index') }}" class="nav-link {{ request()->routeIs('admin.image-configs.*') ? 'active' : '' }}">
                                                 <i class="far fa-image nav-icon"></i>
                                                 <p>Configuración de Imágenes</p>
+                                            </a>
+                                        </li>
+                                    @endif
+                                    @if($hasPermission('admin'))
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.configuracion_empresa.edit') }}" class="nav-link {{ request()->routeIs('admin.configuracion_empresa.edit') ? 'active' : '' }}">
+                                                <i class="fas fa-building nav-icon"></i>
+                                                <p>Gestor de empresa</p>
                                             </a>
                                         </li>
                                     @endif

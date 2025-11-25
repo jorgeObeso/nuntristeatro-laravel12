@@ -307,13 +307,11 @@ $(document).ready(function() {
                     error: error,
                     response: xhr.responseText
                 });
-                
-                alert('Error al actualizar el orden de menús. La página se recargará.');
-                
-                setTimeout(() => {
-                    console.log('🔄 Recargando página...');
-                    location.reload();
-                }, 2000);
+                // alert('Error al actualizar el orden de menús. La página se recargará.');
+                // setTimeout(() => {
+                //     console.log('🔄 Recargando página...');
+                //     location.reload();
+                // }, 2000);
             }
         });
     }

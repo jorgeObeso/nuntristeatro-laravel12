@@ -209,7 +209,7 @@ class Slide extends Model
      */
     private function getCurrentLanguageId(): int
     {
-        $currentLocale = normalizar_etiqueta_idioma(App::getLocale());
+        $currentLocale = \App\Helpers\IdiomaHelper::normalizarEtiqueta(App::getLocale());
         $etiqueta = $currentLocale ?: 'es';
         $idioma = \App\Models\Idioma::where('etiqueta', $etiqueta)->first();
         

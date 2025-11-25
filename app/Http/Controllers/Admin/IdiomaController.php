@@ -87,23 +87,25 @@ class IdiomaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Idioma $idioma)
+    public function show(Idioma $idioma_id)
     {
+        $idioma = $idioma_id;
         return view('admin.idiomas.show', compact('idioma'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Idioma $idioma)
+    public function edit(Idioma $idioma_id)
     {
+        $idioma = $idioma_id;
         return view('admin.idiomas.edit', compact('idioma'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Idioma $idioma)
+    public function update(Request $request, Idioma $idioma_id)
     {
         $validated = $request->validate([
             'nombre' => 'required|string|max:100',
@@ -111,7 +113,7 @@ class IdiomaController extends Controller
                 'required',
                 'string',
                 'max:10',
-                Rule::unique('idiomas', 'etiqueta')->ignore($idioma->id),
+                Rule::unique('idiomas', 'etiqueta')->ignore($idioma_id->id),
                 'regex:/^[a-zA-Z][a-zA-Z-_]*$/'
             ],
             'imagen' => 'nullable|image|mimes:jpeg,jpg,png,gif,svg,webp|max:2048',
@@ -153,34 +155,34 @@ class IdiomaController extends Controller
         }
 
         // Actualizar el idioma
-        $idioma->update($validated);
+        $idioma_id->update($validated);
 
         return redirect()
             ->route('admin.idiomas.index')
-            ->with('success', "Idioma '{$idioma->nombre}' actualizado correctamente.");
+            ->with('success', "Idioma '{$idioma_id->nombre}' actualizado correctamente.");
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Idioma $idioma)
+    public function destroy(Idioma $idioma_id)
     {
         try {
-            $nombre = $idioma->nombre;
+            $nombre = $idioma_id->nombre;
             
             // Verificar si es el único idioma principal activo
-            if ($idioma->es_principal && Idioma::where('activo', true)->count() === 1) {
+            if ($idioma_id->es_principal && Idioma::where('activo', true)->count() === 1) {
                 return redirect()
                     ->route('admin.idiomas.index')
                     ->with('error', 'No se puede eliminar el único idioma principal activo del sistema.');
             }
 
             // Eliminar imagen si existe
-            if ($idioma->imagen && Storage::disk('public')->exists($idioma->imagen)) {
-                Storage::disk('public')->delete($idioma->imagen);
+            if ($idioma_id->imagen && Storage::disk('public')->exists($idioma_id->imagen)) {
+                Storage::disk('public')->delete($idioma_id->imagen);
             }
 
-            $idioma->delete();
+            $idioma_id->delete();
 
             return redirect()
                 ->route('admin.idiomas.index')
@@ -233,25 +235,25 @@ class IdiomaController extends Controller
     /**
      * Toggle estado activo de un idioma
      */
-    public function toggleActive(Idioma $idioma)
+    public function toggleActive(Idioma $idioma_id)
     {
         try {
             // Si es el principal y se quiere desactivar, verificar que haya otros activos
-            if ($idioma->es_principal && $idioma->activo && Idioma::where('activo', true)->count() === 1) {
+            if ($idioma_id->es_principal && $idioma_id->activo && Idioma::where('activo', true)->count() === 1) {
                 return response()->json([
                     'success' => false,
                     'message' => 'No se puede desactivar el único idioma principal activo.'
                 ], 400);
             }
 
-            $idioma->update(['activo' => !$idioma->activo]);
+            $idioma_id->update(['activo' => !$idioma_id->activo]);
 
             return response()->json([
                 'success' => true,
-                'activo' => $idioma->activo,
-                'message' => $idioma->activo ? 
-                    "Idioma '{$idioma->nombre}' activado." : 
-                    "Idioma '{$idioma->nombre}' desactivado."
+                'activo' => $idioma_id->activo,
+                'message' => $idioma_id->activo ? 
+                    "Idioma '{$idioma_id->nombre}' activado." : 
+                    "Idioma '{$idioma_id->nombre}' desactivado."
             ]);
 
         } catch (\Exception $e) {

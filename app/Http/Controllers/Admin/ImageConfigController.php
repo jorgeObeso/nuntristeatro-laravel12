@@ -75,7 +75,7 @@ class ImageConfigController extends Controller
     {
         $request->validate([
             'ancho' => 'required|integer|min:50|max:5000',
-            'alto' => 'required|integer|min:50|max:5000',
+            'alto' => 'nullable|integer|min:0|max:5000',
             'mantener_aspecto' => 'boolean',
             'formato' => 'required|in:jpg,png,webp',
             'calidad' => 'required|integer|min:1|max:100',

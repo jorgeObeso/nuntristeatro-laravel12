@@ -25,6 +25,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // View composer para datos de empresa en todas las vistas
+        View::composer('*', function ($view) {
+            $configEmpresa = \App\Models\ConfiguracionEmpresa::first();
+            $view->with('configEmpresa', $configEmpresa);
+        });
+
         // Configurar rutas de redirección para autenticación
         $this->app['router']->middleware('auth')->group(function () {
             // Configuración manejada por middleware

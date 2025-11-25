@@ -1,8 +1,8 @@
 <?php
-
 namespace App\Http\Middleware;
 
 use App\Models\Idioma;
+use App\Helpers\IdiomaHelper;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -27,7 +27,7 @@ class SetLocale
                 $locale = null;
             }
 
-            $idiomaEtiqueta = normalizar_etiqueta_idioma($locale);
+            $idiomaEtiqueta = IdiomaHelper::normalizarEtiqueta($locale);
 
             // Verificar si el idioma existe en la base de datos
             $idioma = null;
@@ -40,7 +40,7 @@ class SetLocale
             if ($idioma) {
                 // Establecer el idioma en la aplicación y la sesión
                 App::setLocale($idiomaEtiqueta);
-                Session::put('idioma', etiqueta_para_ruta_idioma($idiomaEtiqueta));
+                Session::put('idioma', IdiomaHelper::etiquetaParaRuta($idiomaEtiqueta));
                 Session::put('idioma_actual', $idiomaEtiqueta);
                 Session::put('idioma_id', $idioma->id);
             } else {
@@ -50,9 +50,9 @@ class SetLocale
                                        ->first();
 
                 if ($idiomaDefecto) {
-                    $etiquetaDefecto = normalizar_etiqueta_idioma($idiomaDefecto->etiqueta);
+                    $etiquetaDefecto = IdiomaHelper::normalizarEtiqueta($idiomaDefecto->etiqueta);
                     App::setLocale($etiquetaDefecto ?? 'es');
-                    Session::put('idioma', etiqueta_para_ruta_idioma($etiquetaDefecto ?? 'es'));
+                    Session::put('idioma', IdiomaHelper::etiquetaParaRuta($etiquetaDefecto ?? 'es'));
                     Session::put('idioma_actual', $etiquetaDefecto ?? 'es');
                     Session::put('idioma_id', $idiomaDefecto->id);
                 } else {

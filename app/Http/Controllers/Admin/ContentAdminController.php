@@ -336,18 +336,24 @@ class ContentAdminController extends Controller
                                    ->where('idioma_id', $idiomaId)
                                    ->first();
 
-                // Generar slug automático si no se proporciona uno o si cambió el título
-                $slug = !empty($textoData['slug']) ? $textoData['slug'] : Str::slug($textoData['titulo']);
-                
-                // Verificar que el slug sea único para este idioma (excluyendo el registro actual)
-                $originalSlug = $slug;
-                $counter = 1;
-                while (TextoIdioma::where('slug', $slug)
-                                 ->where('idioma_id', $idiomaId)
-                                 ->where('id', '!=', $texto ? $texto->id : 0)
-                                 ->exists()) {
-                    $slug = $originalSlug . '-' . $counter;
-                    $counter++;
+                // Recalcular el slug si el usuario lo cambia manualmente, si el título cambia, o si está vacío
+                $slug = $texto ? $texto->slug : null;
+                $slugEnviado = $textoData['slug'] ?? null;
+                $tituloCambiado = $texto && $texto->titulo !== $textoData['titulo'];
+                $slugCambiado = $slugEnviado && $slugEnviado !== $slug;
+                // Si el usuario cambia el slug manualmente, o si deja el slug vacío y cambia el título, o si el slug está vacío
+                if ($slugCambiado || (empty($slugEnviado) && $tituloCambiado) || empty($slug)) {
+                    $slug = !empty($slugEnviado) ? $slugEnviado : Str::slug($textoData['titulo']);
+                    // Verificar que el slug sea único para este idioma (excluyendo el registro actual)
+                    $originalSlug = $slug;
+                    $counter = 1;
+                    while (TextoIdioma::where('slug', $slug)
+                                     ->where('idioma_id', $idiomaId)
+                                     ->where('id', '!=', $texto ? $texto->id : 0)
+                                     ->exists()) {
+                        $slug = $originalSlug . '-' . $counter;
+                        $counter++;
+                    }
                 }
 
                 $data = [

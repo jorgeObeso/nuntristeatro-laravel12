@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Idioma;
+use App\Helpers\IdiomaHelper;
 use App\Models\Content;
 use App\Models\Menu;
 use App\Models\Configuracion;
@@ -10,8 +11,12 @@ use App\Models\Slide;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
 
+use App\Models\ConfiguracionEmpresa;
+use App\Http\Controllers\Traits\RedesSocialesTrait;
+
 class WebController extends Controller
 {
+    use RedesSocialesTrait;
     /**
      * Página principal - redirección al idioma por defecto
      */
@@ -30,7 +35,8 @@ class WebController extends Controller
      */
     public function inicio($idioma)
     {
-        $idiomaNormalizado = normalizar_etiqueta_idioma($idioma) ?? 'es';
+        $idiomaNormalizado = IdiomaHelper::normalizarEtiqueta($idioma) ?? 'es';
+        app()->setLocale($idiomaNormalizado);
         Session::put('idioma_actual', $idiomaNormalizado);
 
         // Obtener configuración general
@@ -51,9 +57,17 @@ class WebController extends Controller
                 },
             ])
             ->get();
-        
-        // Obtener contenido de inicio
-        $contenidoInicio = Content::where('actions', 'inicio')
+
+        // Obtener menús de pie de página
+        $menusPie = Menu::menuPie()->where('visible', true)->get();
+
+        // Configuración empresa y redes sociales
+        $configEmpresa = ConfiguracionEmpresa::first();
+        $redesSociales = $this->obtenerRedesSociales($configEmpresa);
+
+        // Obtener contenido de portada: marcado como portada y página estática
+        $contenidoInicio = Content::where('portada', true)
+            ->where('pagina_estatica', true)
             ->with(['textos.idioma'])
             ->first();
         
@@ -87,10 +101,13 @@ class WebController extends Controller
         return view('web.inicio', compact(
             'configuracion', 
             'menus', 
+            'menusPie',
             'contenidoInicio', 
             'noticiasPortada',
             'slides',
-            'galerias'
+            'galerias',
+            'configEmpresa',
+            'redesSociales'
         ));
     }
 
@@ -99,15 +116,25 @@ class WebController extends Controller
      */
     public function contenido($idioma, $slug)
     {
-        // Buscar el contenido por slug
-        $idiomaNormalizado = normalizar_etiqueta_idioma($idioma) ?? 'es';
+        // Buscar el texto por slug e idioma
+        $idiomaNormalizado = \App\Helpers\IdiomaHelper::normalizarEtiqueta($idioma) ?? 'es';
 
-        $contenido = Content::whereHas('textos', function($query) use ($slug, $idiomaNormalizado) {
-            $query->bySlug($slug)->byIdioma($idiomaNormalizado)->visible();
-        })->with(['textos' => function($query) use ($idiomaNormalizado) {
-            $query->byIdioma($idiomaNormalizado)->visible();
-        }, 'galeria'])->firstOrFail();
-        
+        $texto = \App\Models\TextoIdioma::where('slug', $slug)
+            ->whereHas('idioma', function($q) use ($idiomaNormalizado) {
+                $q->where('etiqueta', $idiomaNormalizado);
+            })
+            ->where('visible', true)
+            ->firstOrFail();
+
+
+            // Obtener el contenido asociado y cargar relaciones
+            $contenido = $texto->contenidoModel;
+            if ($contenido) {
+                $contenido->load(['textos' => function($query) {
+                    $query->visible();
+                }, 'galeria']);
+            }
+
         $configuracion = Configuracion::first();
         $menus = Menu::principal()
             ->where('visible', true)
@@ -123,8 +150,16 @@ class WebController extends Controller
                 },
             ])
             ->get();
-        
-        return view('web.contenido', compact('contenido', 'configuracion', 'menus'));
+
+       // dd($contenido, $contenido?->textos);
+        return view('web.contenido', [
+            'contenido' => $contenido,
+            'configuracion' => $configuracion,
+            'menus' => $menus,
+            'texto' => $texto,
+            'idioma' => $idioma,
+            'galeria' => $contenido ? $contenido->galeria : null,
+        ]);
     }
 
     /**

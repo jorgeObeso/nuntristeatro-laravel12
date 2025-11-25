@@ -1,0 +1,33 @@
+footer {background-image: url('/images/footer.png');
+    background-size: cover;
+    background-position: center;
+    color: var(--color-blanco);
+    display: flex;
+    min-height: 387px;
+    align-items: center;}
+footer .col-lg-4{float: left;
+padding: 0;
+max-width: 24%;}
+
+ .cierre-footer-container{
+    padding-top: 1rem;
+    text-align: center; }
+.info-empresa li{
+    list-style: none;
+    margin-bottom: 0.5rem;
+}
+.info-empresa a{
+    color: var(--color-blanco);
+    text-decoration: none;
+}
+footer ul{
+    padding-left: 0;
+}
+ul.redes li{
+    float: left;
+    list-style: none;
+    margin-right: 15px;
+}
+.redes img{
+    max-width: 35px;
+}

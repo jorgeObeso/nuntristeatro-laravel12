@@ -209,7 +209,7 @@
 <script>
 console.log('🌍 Script de gestión de idiomas cargado');
 
-const toggleActiveUrlTemplate = '{{ route('admin.idiomas.toggle-active', ['idioma' => '__ID__']) }}';
+const toggleActiveUrlTemplate = '{{ route('admin.idiomas.toggle-active', ['idioma_id' => '__ID__']) }}';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar drag & drop

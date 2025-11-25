@@ -80,9 +80,10 @@
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="alto">Alto (px)</label>
-                                            <input type="number" name="alto" id="alto" 
+                                            <input type="number" name="alto" id="alto"
                                                    class="form-control @error('alto') is-invalid @enderror"
-                                                   value="{{ old('alto', $imageConfig->alto) }}" min="50" max="5000" required>
+                                                   value="{{ old('alto', $imageConfig->alto) }}" min="0" max="5000" step="1" placeholder="Dejar vacío o 0 para solo ancho">
+                                            <small class="text-muted">Si dejas vacío o pones 0, solo se fijará el ancho y se mantendrá la proporción.</small>
                                             @error('alto')
                                                 <span class="invalid-feedback">{{ $message }}</span>
                                             @enderror
@@ -120,8 +121,9 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="mantener_aspecto" id="mantener_aspecto" 
-                                               class="custom-control-input" 
+                                        <input type="hidden" name="mantener_aspecto" value="0">
+                                        <input type="checkbox" name="mantener_aspecto" id="mantener_aspecto" value="1"
+                                               class="custom-control-input"
                                                {{ old('mantener_aspecto', $imageConfig->mantener_aspecto) ? 'checked' : '' }}>
                                         <label class="custom-control-label" for="mantener_aspecto">
                                             Mantener proporción de aspecto
@@ -136,8 +138,9 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="redimensionar" id="redimensionar" 
-                                               class="custom-control-input" 
+                                        <input type="hidden" name="redimensionar" value="0">
+                                        <input type="checkbox" name="redimensionar" id="redimensionar" value="1"
+                                               class="custom-control-input"
                                                {{ old('redimensionar', $imageConfig->redimensionar) ? 'checked' : '' }}>
                                         <label class="custom-control-label" for="redimensionar">
                                             Habilitar redimensionado
@@ -152,8 +155,9 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     <div class="custom-control custom-switch">
-                                        <input type="checkbox" name="activo" id="activo" 
-                                               class="custom-control-input" 
+                                        <input type="hidden" name="activo" value="0">
+                                        <input type="checkbox" name="activo" id="activo" value="1"
+                                               class="custom-control-input"
                                                {{ old('activo', $imageConfig->activo) ? 'checked' : '' }}>
                                         <label class="custom-control-label" for="activo">
                                             Configuración activa
@@ -172,8 +176,12 @@
                             {{ $imageConfig->ancho }}×{{ $imageConfig->alto }}px, 
                             {{ strtoupper($imageConfig->formato) }}, 
                             {{ $imageConfig->calidad }}% calidad
-                            @if($imageConfig->mantener_aspecto), mantiene aspecto@endif
-                            @if($imageConfig->redimensionar), redimensiona@endif
+                            @if($imageConfig->mantener_aspecto)
+                                , mantiene aspecto
+                            @endif
+                            @if($imageConfig->redimensionar)
+                                , redimensiona
+                            @endif
                         </div>
                     </div>
 

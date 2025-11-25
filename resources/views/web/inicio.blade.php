@@ -1,61 +1,4 @@
-@php
-    $galeria = isset($galerias) && $galerias->count() > 0 ? $galerias->first() : null;
-    $imagenesGaleria = $galeria ? $galeria->images : collect();
-    if (!isset($idiomaRuta)) {
-        $idiomaActual = function_exists('idioma_actual') ? idioma_actual() : (app()->getLocale() ?? 'es');
-        $idiomaRuta = function_exists('etiqueta_para_ruta_idioma') ? etiqueta_para_ruta_idioma($idiomaActual) : $idiomaActual;
-    }
-@endphp
 
-    {{-- Galería después de las noticias --}}
-    @section('galeria')
-        @if($imagenesGaleria->count() > 0)
-            <section class="py-5 bg-white">
-                <div class="container">
-                    <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-4">
-                        <div>
-                            <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-3 py-2 mb-2">{{ __('Galería') }}</span>
-                            <h3 class="fw-bold mb-0">{{ $galeria->nombre ?? ($idiomaActual === 'ast' ? 'Galería' : 'Galería') }}</h3>
-                        </div>
-                        <a href="{{ route('galleries.index', ['idioma' => $idiomaRuta]) }}" class="btn btn-outline-dark mt-3 mt-lg-0">
-                            {{ $idiomaActual === 'ast' ? 'Ver toles les galeríes' : 'Ver todas las galerías' }}
-                        </a>
-                    </div>
-                    <div id="galleryCarousel" class="carousel slide" data-bs-ride="carousel">
-                        <div class="carousel-inner">
-                            @foreach($imagenesGaleria as $imagen)
-                                <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                    <div class="d-flex justify-content-center align-items-center" style="min-height:320px;">
-                                        {!! responsive_image_html(
-                                            $imagen->imagen,
-                                            get_gallery_image_alt($imagen, $idiomaActual),
-                                            'rounded-4 shadow-lg w-100',
-                                            'max-width: 600px; max-height: 320px; object-fit: cover;'
-                                        ) !!}
-                                    </div>
-                                    @if($imagen->titulo)
-                                        <div class="carousel-caption d-none d-md-block">
-                                            <h5 class="fw-bold bg-dark bg-opacity-75 rounded-3 px-3 py-2 d-inline-block">{{ $imagen->titulo }}</h5>
-                                        </div>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-                        @if($imagenesGaleria->count() > 1)
-                            <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
-                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Previous</span>
-                            </button>
-                            <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
-                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                <span class="visually-hidden">Next</span>
-                            </button>
-                        @endif
-                    </div>
-                </div>
-            </section>
-        @endif
-    @endsection
 @extends('layouts.app')
 
 @section('title', 'Inicio - ' . ($configuracion->nombre_empresa ?? 'Nuntris Teatro'))
@@ -63,7 +6,7 @@
 @php
     $slidesCollection = isset($slides) ? collect($slides) : collect();
     $idiomaActual = idioma_actual();
-    $idiomaRuta = etiqueta_para_ruta_idioma($idiomaActual);
+    $idiomaRuta = \App\Helpers\IdiomaHelper::etiquetaParaRuta($idiomaActual);
 
     $textoInicio = null;
     if ($contenidoInicio) {
@@ -97,10 +40,12 @@
                                                     <p class="lead mb-4">{{ $descripcionSlide }}</p>
                                                 @endif
                                                 @if($ctaUrl)
+                                                    @php app()->setLocale($idiomaActual); @endphp
                                                     <a href="{{ $ctaUrl }}" class="btn btn-warning btn-lg shadow-sm" target="{{ $ctaTarget }}">
-                                                        <i class="fa-solid fa-circle-play me-2"></i>{{ __('Descubrir') }}
+                                                        {{ __('web.descubrir') }}
                                                     </a>
                                                 @endif
+                                          
                                             </div>
                                         </div>
                                     </div>
@@ -140,22 +85,23 @@
     </section>
 
     @if($textoInicio)
-        <section class="py-5 py-lg-5 bg-white">
+        <section id="contenido-inicio" >
             <div class="container">
-                <div class="row justify-content-center">
+                <div class="row">
                     <div class="col-lg-10 col-xl-8">
-                        <article class="text-center">
-                            <h1 class="fw-bold mb-3">{{ $textoInicio->titulo ?? ($configuracion->nombre_empresa ?? 'Nuntris Teatro') }}</h1>
+                        <article>
+                            <header>
+                                <h1>{{ $textoInicio->titulo ?? ($configuracion->nombre_empresa ?? 'Nuntris Teatro') }}</h1>
                             @if(!empty($textoInicio->subtitulo))
-                                <h2 class="h4 text-secondary mb-3">{{ $textoInicio->subtitulo }}</h2>
+                                <h2>{{ $textoInicio->subtitulo }}</h2>
                             @endif
+                             </header>
                             @if(!empty($textoInicio->resumen))
-                                <p class="lead mb-4">{!! $textoInicio->resumen !!}</p>
+                                {!! $textoInicio->resumen !!}
                             @endif
                             @if(!empty($textoInicio->contenido))
-                                <div class="fs-5 text-start mx-auto" style="max-width: 700px;">
+                                
                                     {!! $textoInicio->contenido !!}
-                                </div>
                             @endif
                         </article>
                     </div>
@@ -164,20 +110,17 @@
         </section>
     @endif
 
-    <section class="py-5 py-lg-5">
+    <section id="noticias-portada">
         <div class="container">
             @if($noticiasPortada && $noticiasPortada->count() > 0)
-                <div class="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between mb-4">
+                <div class="col-lg-10">
                     <div>
-                        <span class="badge bg-secondary-subtle text-secondary-emphasis rounded-pill px-3 py-2 mb-2">{{ __('Actualidad') }}</span>
-                        <h3 class="fw-bold mb-0">{{ $idiomaActual === 'ast' ? 'Últimes noticies' : 'Últimas noticias' }}</h3>
+                        
+                        <h3>{{ __('web.ultimas_noticias') }}</h3>
                     </div>
-                    <a href="{{ route('noticias', ['idioma' => $idiomaRuta]) }}" class="btn btn-outline-dark mt-3 mt-lg-0">
-                        {{ $idiomaActual === 'ast' ? 'Ver toles les noticies' : 'Ver todas las noticias' }}
-                    </a>
                 </div>
 
-                <div class="row g-4">
+                <div class="row g-3">
                     @foreach($noticiasPortada as $noticia)
                         @php
                             $textoNoticia = $noticia->textos->first();
@@ -193,7 +136,7 @@
                                         ) !!}
                                     @endif
                                     <div class="card-body d-flex flex-column">
-                                        <h5 class="fw-bold">{{ $textoNoticia->titulo }}</h5>
+                                        <h4>{{ $textoNoticia->titulo }}</h4>
                                         @if($noticia->fecha_publicacion)
                                             <p class="text-muted small mb-2">
                                                 <i class="fa-solid fa-calendar-days me-1"></i>{{ optional($noticia->fecha_publicacion)->format('d/m/Y') }}
@@ -203,8 +146,8 @@
                                             <p class="text-muted flex-grow-1">{!! $textoNoticia->resumen !!}</p>
                                         @endif
                                         <div class="mt-3">
-                                            <a href="{{ route('contenido', ['idioma' => $idiomaRuta, 'slug' => $textoNoticia->slug]) }}" class="btn btn-link px-0 fw-semibold">
-                                                {{ $idiomaActual === 'ast' ? 'Lleer más' : 'Leer más' }} <i class="fa-solid fa-arrow-right ms-1"></i>
+                                            <a href="{{ route('contenido', [$idiomaRuta, $textoNoticia->slug]) }}" class="btn btn-link px-0 fw-semibold">
+                                               {{ __('web.leer_mas') }}
                                             </a>
                                         </div>
                                     </div>
@@ -223,9 +166,19 @@
             @endif
         </div>
     </section>
-    @yield('galeria')
+    @php
+    $galeria = isset($galerias) && $galerias->count() > 0 ? $galerias->first() : null;
+    $imagenesGaleria = $galeria ? $galeria->images : collect();
+    if (!isset($idiomaRuta)) {
+        $idiomaActual = function_exists('idioma_actual') ? idioma_actual() : (app()->getLocale() ?? 'es');
+        $idiomaRuta = \App\Helpers\IdiomaHelper::etiquetaParaRuta($idiomaActual);
+    }
+@endphp
 
-    <section class="py-5 bg-white">
+   
+
+
+    <section class="py-5">
         <div class="container">
             <div class="card border-0 shadow-lg overflow-hidden">
                 <div class="row g-0 align-items-center">
@@ -259,19 +212,8 @@
             </div>
         </div>
     </section>
+
 @endsection
-
 @push('styles')
-    <style>
-        .noticias-img {
-            height: 220px;
-            object-fit: cover;
-        }
-
-        @media (max-width: 767px) {
-            .hero-caption h1 {
-                font-size: 2rem;
-            }
-        }
-    </style>
+     @vite(['resources/css/inicio.css'])
 @endpush

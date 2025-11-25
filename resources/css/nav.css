@@ -1,0 +1,9 @@
+/* menu idiomas*/
+ .dropdown-menu { 
+    background-color: var(--colornuntris);}
+.dropdown-item:focus, .dropdown-item:hover {
+    background-color: var(--color-blanco);}
+ .dropdown-menu .active {
+    background-color: var(--colornuntris);
+    color: var(--color-blanco);
+    pointer-events: none;}

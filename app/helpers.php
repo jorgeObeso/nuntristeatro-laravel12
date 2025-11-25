@@ -39,58 +39,45 @@ if (!function_exists('get_image_alt')) {
         }
         
         // Fallback al ALT global del contenido
-        if ($content) {
-            if ($tipo === 'imagen' && $content->imagen_alt) {
-                return $content->imagen_alt;
-            }
-            if ($tipo === 'imagen_portada' && $content->imagen_portada_alt) {
-                return $content->imagen_portada_alt;
-            }
-        }
-        
-        // Fallback al título del texto o descripción genérica
-        if ($texto && $texto->titulo) {
-            return $texto->titulo;
-        }
-        
-        return 'Imagen de ' . ($content->tipo_contenido ?? 'contenido');
-    }
-}
+        switch ($menu->tipo_enlace) {
+            case 'url_externa':
+                return $menu->url_externa ?: $menu->url ?: '#';
 
-if (!function_exists('get_responsive_image_url')) {
-    /**
-     * Generar URL de imagen responsive (alias para responsive_image)
-     */
-    function get_responsive_image_url(string $path, string $type = 'desktop'): string
-    {
-        $isMobile = ($type === 'mobile');
-        return responsive_image($path, $isMobile);
-    }
-}
+            case 'ancla':
+            case 'anchor':
+                return $menu->url ? ('#' . ltrim($menu->url, '#')) : '#';
 
-// ==================== HELPERS DE IDIOMAS ====================
+            case 'contenido':
+                if ($menu->content) {
+                    // Priorizar slug del contenido asociado
+                    $textoContenido = $menu->content->textos->first(function ($texto) use ($idiomaEtiqueta) {
+                        $etiquetaTexto = \App\Helpers\IdiomaHelper::normalizarEtiqueta(optional($texto->idioma)->etiqueta);
+                        return $texto->activo && $etiquetaTexto === $idiomaEtiqueta;
+                    }) ?? $menu->content->textos->first();
 
-if (!function_exists('normalizar_etiqueta_idioma')) {
-    /**
-     * Normaliza etiquetas de idioma procedentes de rutas/BD.
-     */
-    function normalizar_etiqueta_idioma(?string $etiqueta): ?string
-    {
-        if ($etiqueta === null) {
-            return null;
+                    $slug = $textoContenido?->slug;
+
+                    // DEBUG: Mostrar slug y URL generada en el HTML (solo para depuración)
+                    // DEBUG eliminado
+
+                    if ($slug) {
+                        try {
+                            $url = route('contenido', [
+                                'idioma' => $idiomaRuta,
+                                'slug' => $slug,
+                            ]);
+                            // DEBUG eliminado
+                            return $url;
+                        } catch (\Throwable $e) {
+                            // Ignorar excepción y continuar con fallback.
+                        }
+                    }
+                }
+                break;
         }
 
-        return $etiqueta === 'as' ? 'ast' : $etiqueta;
-    }
-}
-
-if (!function_exists('etiqueta_para_ruta_idioma')) {
-    /**
-     * Convierte una etiqueta canónica al valor esperado en las rutas.
-     */
-    function etiqueta_para_ruta_idioma(string $etiqueta): string
-    {
-        return $etiqueta === 'ast' ? 'as' : $etiqueta;
+        // Si no hay slug ni url externa, devolver '#'
+        return '#';
     }
 }
 
@@ -124,12 +111,12 @@ if (!function_exists('idioma_actual')) {
         $idioma = request()->route('idioma');
         
         if ($idioma) {
-            return normalizar_etiqueta_idioma($idioma);
+            return \App\Helpers\IdiomaHelper::normalizarEtiqueta($idioma);
         }
         
         // Fallback al idioma principal
         $principal = idioma_principal();
-        return $principal ? normalizar_etiqueta_idioma($principal->etiqueta) : 'es';
+        return $principal ? \App\Helpers\IdiomaHelper::normalizarEtiqueta($principal->etiqueta) : 'es';
     }
 }
 
@@ -143,13 +130,13 @@ if (!function_exists('url_idioma')) {
         $parametros = request()->route()->parameters();
         
         // Actualizar el parámetro de idioma
-        $parametros['idioma'] = etiqueta_para_ruta_idioma($etiquetaIdioma);
+        $parametros['idioma'] = \App\Helpers\IdiomaHelper::etiquetaParaRuta($etiquetaIdioma);
         
         try {
             return route($rutaActual, $parametros);
         } catch (\Exception $e) {
             // Fallback a la página principal del idioma
-            return route('inicio', ['idioma' => etiqueta_para_ruta_idioma($etiquetaIdioma)]);
+            return route('inicio', ['idioma' => \App\Helpers\IdiomaHelper::etiquetaParaRuta($etiquetaIdioma)]);
         }
     }
 }
@@ -193,7 +180,7 @@ if (!function_exists('es_idioma_actual')) {
      */
     function es_idioma_actual(string $etiqueta): bool
     {
-        return idioma_actual() === normalizar_etiqueta_idioma($etiqueta);
+        return idioma_actual() === \App\Helpers\IdiomaHelper::normalizarEtiqueta($etiqueta);
     }
 }
 
@@ -205,8 +192,8 @@ if (!function_exists('menu_url')) {
     {
         $menu->loadMissing(['textos.idioma', 'content.textos.idioma']);
 
-        $idiomaEtiqueta = normalizar_etiqueta_idioma($idiomaEtiqueta ?? idioma_actual());
-        $idiomaRuta = etiqueta_para_ruta_idioma($idiomaEtiqueta ?? 'es');
+        $idiomaEtiqueta = \App\Helpers\IdiomaHelper::normalizarEtiqueta($idiomaEtiqueta ?? idioma_actual());
+        $idiomaRuta = \App\Helpers\IdiomaHelper::etiquetaParaRuta($idiomaEtiqueta ?? 'es');
 
         switch ($menu->tipo_enlace) {
             case 'url_externa':
@@ -218,31 +205,50 @@ if (!function_exists('menu_url')) {
 
             case 'contenido':
                 if ($menu->content) {
+                    // Buscar el slug correcto del contenido según idioma
                     $textoMenu = $menu->textos->first(function ($texto) use ($idiomaEtiqueta) {
-                        $etiquetaTexto = normalizar_etiqueta_idioma(optional($texto->idioma)->etiqueta);
+                        $etiquetaTexto = \App\Helpers\IdiomaHelper::normalizarEtiqueta(optional($texto->idioma)->etiqueta);
                         return $texto->activo && $etiquetaTexto === $idiomaEtiqueta;
                     });
-
                     $slug = $textoMenu?->slug;
-
                     if (!$slug) {
                         $textoContenido = $menu->content->textos->first(function ($texto) use ($idiomaEtiqueta) {
-                            $etiquetaTexto = normalizar_etiqueta_idioma(optional($texto->idioma)->etiqueta);
+                            $etiquetaTexto = \App\Helpers\IdiomaHelper::normalizarEtiqueta(optional($texto->idioma)->etiqueta);
                             return $texto->activo && $etiquetaTexto === $idiomaEtiqueta;
                         }) ?? $menu->content->textos->first();
-
                         $slug = $textoContenido?->slug;
                     }
-
-                    if ($slug) {
-                        try {
-                            return route('contenido', [
-                                'idioma' => $idiomaRuta,
-                                'slug' => $slug,
-                            ]);
-                        } catch (\Throwable $e) {
-                            // Ignorar excepción y continuar con fallback.
-                        }
+                    // Si no hay slug, fallback
+                    if (!$slug) {
+                        return '#';
+                    }
+                    // Determinar tipo de contenido
+                    $tipo = optional($menu->content->tipoContenido)->nombre;
+                    $routeParams = ['idioma' => $idiomaRuta, 'slug' => $slug];
+                    // Seleccionar la ruta según el tipo
+                    switch ($tipo) {
+                        case 'noticia':
+                        case 'noticias':
+                            $routeName = 'noticias.show';
+                            break;
+                        case 'entrevista':
+                        case 'entrevistas':
+                            $routeName = 'entrevistas.show';
+                            break;
+                        case 'pagina':
+                        case 'página':
+                            $routeName = 'pagina.show';
+                            break;
+                        default:
+                            $routeName = 'contenido';
+                    }
+                    try {
+                        $url = route($routeName, $routeParams);
+                        // DEBUG eliminado
+                        return $url;
+                    } catch (\Throwable $e) {
+                        // Fallback a la ruta por defecto
+                        return route('contenido', $routeParams);
                     }
                 }
                 break;

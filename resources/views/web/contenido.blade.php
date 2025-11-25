@@ -30,7 +30,7 @@
                 </li>
             </ol>
         </nav>
-
+<section id="detalle-contenido">
         <div class="row">
             <!-- Contenido principal -->
             <div class="col-lg-8">
@@ -254,11 +254,11 @@
                 @endif
             </div>
         </div>
-        
+</section>
     @endif
 </div>
                 @endsection
 
 @push('styles')
-
+    @vite(['resources/css/contenido.css'])
 @endpush

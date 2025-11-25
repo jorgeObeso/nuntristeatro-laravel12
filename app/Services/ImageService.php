@@ -70,8 +70,16 @@ class ImageService
             
             if ($config->redimensionar) {
                 if ($config->mantener_aspecto) {
-                    // Redimensionar manteniendo proporción (fit dentro de las dimensiones)
-                    $image->scaleDown(width: $config->ancho, height: $config->alto);
+                    // Si alto es null o 0, solo fijar ancho y mantener proporción
+                    if (empty($config->alto) || $config->alto == 0) {
+                        $image->resize($config->ancho, null, function ($constraint) {
+                            $constraint->aspectRatio();
+                            $constraint->upsize();
+                        });
+                    } else {
+                        // Redimensionar manteniendo proporción (fit dentro de las dimensiones)
+                        $image->scaleDown(width: $config->ancho, height: $config->alto);
+                    }
                 } else {
                     // Redimensionar forzando tamaño exacto
                     $image->resize($config->ancho, $config->alto);

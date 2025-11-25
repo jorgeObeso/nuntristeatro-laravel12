@@ -20,8 +20,9 @@ window.initTinyMCE = function() {
             'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
             'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
             'insertdatetime', 'media', 'table', 'help', 'wordcount', 'emoticons',
-            'template', 'codesample', 'hr', 'pagebreak', 'nonbreaking'
+            'codesample', 'pagebreak', 'nonbreaking'
         ],
+        license_key: 'gpl',
         toolbar1: 'undo redo | bold italic underline strikethrough | fontfamily fontsize blocks | forecolor backcolor | emoticons',
         toolbar2: 'alignleft aligncenter alignright alignjustify | outdent indent | numlist bullist checklist | link unlink anchor | image media | table hr pagebreak | insertdatetime charmap | code fullscreen preview',
         block_formats: 'Párrafo=p; Título 1=h1; Título 2=h2; Título 3=h3; Título 4=h4; Título 5=h5; Título 6=h6; Preformateado=pre; Cita=blockquote',
@@ -95,24 +96,7 @@ window.initTinyMCE = function() {
             'width': '100%'
         },
         
-        // Plantillas predefinidas para teatro
-        templates: [
-            {
-                title: 'Noticia Teatral',
-                description: 'Plantilla para noticias de teatro',
-                content: '<h2>Título de la Noticia</h2><p><strong>Fecha:</strong> [Fecha del evento]</p><p><strong>Lugar:</strong> [Teatro/Ubicación]</p><p>[Contenido de la noticia...]</p><blockquote><p>"[Cita destacada]"</p></blockquote><p>[Más información...]</p>'
-            },
-            {
-                title: 'Entrevista',
-                description: 'Plantilla para entrevistas',
-                content: '<h2>[Nombre del Entrevistado]</h2><h3>Entrevista</h3><p><strong>P:</strong> [Pregunta]</p><p><strong>R:</strong> [Respuesta]</p><p><strong>P:</strong> [Pregunta]</p><p><strong>R:</strong> [Respuesta]</p>'
-            },
-            {
-                title: 'Información de Obra',
-                description: 'Plantilla para información de obras teatrales',
-                content: '<h2>[Título de la Obra]</h2><table class="table table-bordered"><tr><td><strong>Director:</strong></td><td>[Nombre del director]</td></tr><tr><td><strong>Autor:</strong></td><td>[Nombre del autor]</td></tr><tr><td><strong>Género:</strong></td><td>[Drama, Comedia, etc.]</td></tr><tr><td><strong>Duración:</strong></td><td>[Duración aproximada]</td></tr></table><h3>Sinopsis</h3><p>[Descripción de la obra...]</p><h3>Reparto</h3><ul><li>[Actor 1] - [Personaje]</li><li>[Actor 2] - [Personaje]</li></ul>'
-            }
-        ],
+        // Plantillas predefinidas para teatro (eliminado por incompatibilidad TinyMCE 7)
         
         content_style: `
             body { 

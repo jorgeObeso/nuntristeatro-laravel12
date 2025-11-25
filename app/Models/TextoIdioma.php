@@ -14,7 +14,7 @@ class TextoIdioma extends Model
     protected $fillable = [
         'idioma_id',
         'contenido_id',
-        'tipo_contenido_id',
+        'tipo_contenido_id', // Puede ser null para empresa
         'titulo',
         'subtitulo',
         'resumen',

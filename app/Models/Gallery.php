@@ -41,7 +41,8 @@ class Gallery extends Model
     public function getPortadaDesktopUrlAttribute()
     {
         if ($this->imagen_portada) {
-            return get_responsive_image_url('storage/' . $this->imagen_portada, 'desktop');
+            // desktop = false
+            return responsive_image('storage/' . $this->imagen_portada, false);
         }
         return null;
     }
@@ -49,7 +50,8 @@ class Gallery extends Model
     public function getPortadaMobileUrlAttribute()
     {
         if ($this->imagen_portada) {
-            return get_responsive_image_url('storage/' . $this->imagen_portada, 'mobile');
+            // mobile = true
+            return responsive_image('storage/' . $this->imagen_portada, true);
         }
         return null;
     }
