@@ -12,4 +12,6 @@ return [
     'Inicio' => 'Iniciu',
     'descubrir' => 'Discubrir',
     'leer_mas' => 'Lleer más',
+    'noticias' => 'Noticies',
+    'Próximamente' => 'LLueu',
 ];

@@ -97,62 +97,86 @@
                         <div class="container">
                             <h3 class="fw-bold mb-4">{{ $galeria->nombre ?? __('Galería') }}</h3>
                             <div class="row g-3 mb-4">
-                                @foreach($galeria->images->take(3) as $img)
+                                @foreach($galeria->images as $idx => $img)
                                     <div class="col-md-4">
-                                        <a href="#" data-bs-toggle="modal" data-bs-target="#modalImagen" data-img="{{ Storage::url($img->imagen) }}" data-alt="{{ $img->titulo ?? '' }}">
-                                            <img src="{{ Storage::url($img->imagen) }}" alt="{{ $img->titulo ?? '' }}" class="img-fluid rounded shadow-sm w-100" style="cursor:pointer;object-fit:cover;max-height:220px;">
+                                        <a href="#" class="galeria-img-link" data-idx="{{ $idx }}" data-bs-toggle="modal" data-bs-target="#modalGaleriaDetalle">
+                                            <img src="{{ Storage::url($img->imagen) }}" alt="{{ $img->alt_text ?? $img->titulo ?? '' }}" class="img-fluid rounded shadow-sm w-100" style="cursor:pointer;object-fit:cover;max-height:220px;">
                                         </a>
                                     </div>
                                 @endforeach
                             </div>
-                            @if($galeria->images->count() > 3)
-                                <div id="galleryCarousel" class="carousel slide mb-4" data-bs-ride="carousel">
-                                    <div class="carousel-inner">
-                                        @foreach($galeria->images->slice(3) as $img)
-                                            <div class="carousel-item {{ $loop->first ? 'active' : '' }}">
-                                                <div class="d-flex justify-content-center">
-                                                    <a href="#" data-bs-toggle="modal" data-bs-target="#modalImagen" data-img="{{ Storage::url($img->imagen) }}" data-alt="{{ $img->titulo ?? '' }}">
-                                                        <img src="{{ Storage::url($img->imagen) }}" alt="{{ $img->titulo ?? '' }}" class="img-fluid rounded shadow-lg" style="max-height:320px;object-fit:cover;cursor:pointer;">
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        @endforeach
+                            <!-- Modal Galería Detalle -->
+                            <div class="modal fade" id="modalGaleriaDetalle" tabindex="-1" aria-labelledby="modalGaleriaDetalleLabel" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered modal-lg">
+                                    <div class="modal-content bg-dark text-white position-relative">
+                                        <button type="button" class="btn-close btn-close-white position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                                        <div class="modal-body text-center position-relative">
+                                            <button type="button" class="btn btn-dark position-absolute top-50 start-0 translate-middle-y ms-2" id="galeriaDetallePrev" style="z-index:2;">
+                                                <i class="fa-solid fa-chevron-left fa-2x"></i>
+                                            </button>
+                                            <img id="modalGaleriaDetalleImg" src="" alt="" class="img-fluid rounded shadow-lg" style="max-height:70vh;">
+                                            <button type="button" class="btn btn-dark position-absolute top-50 end-0 translate-middle-y me-2" id="galeriaDetalleNext" style="z-index:2;">
+                                                <i class="fa-solid fa-chevron-right fa-2x"></i>
+                                            </button>
+                                            <div class="mt-3" id="modalGaleriaDetalleCaption"></div>
+                                        </div>
                                     </div>
-                                    <button class="carousel-control-prev" type="button" data-bs-target="#galleryCarousel" data-bs-slide="prev">
-                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                                        <span class="visually-hidden">Previous</span>
-                                    </button>
-                                    <button class="carousel-control-next" type="button" data-bs-target="#galleryCarousel" data-bs-slide="next">
-                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                                        <span class="visually-hidden">Next</span>
-                                    </button>
-                                </div>
-                            @endif
-                        </div>
-                    </section>
-                    <!-- Modal para ampliar imagen -->
-                    <div class="modal fade" id="modalImagen" tabindex="-1" aria-labelledby="modalImagenLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                            <div class="modal-content bg-transparent border-0">
-                                <div class="modal-body p-0 text-center">
-                                    <img src="" alt="" id="modalImagenSrc" class="img-fluid rounded shadow-lg">
                                 </div>
                             </div>
+                            @push('scripts')
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const imagenes = [
+                                        @foreach($galeria->images as $img)
+                                            {
+                                                url: "{{ $img->imagen ? Storage::url($img->imagen) : '' }}",
+                                                alt: "{{ addslashes($img->alt_text ?? $img->titulo ?? 'Imagen galería') }}",
+                                                titulo: "{{ addslashes($img->titulo ?? '') }}",
+                                                descripcion: "{!! addslashes($img->descripcion ?? '') !!}"
+                                            },
+                                        @endforeach
+                                    ];
+                                    let idxActual = 0;
+                                    const modalImg = document.getElementById('modalGaleriaDetalleImg');
+                                    const modalCaption = document.getElementById('modalGaleriaDetalleCaption');
+                                    const galeriaLinks = document.querySelectorAll('.galeria-img-link');
+                                    const prevBtn = document.getElementById('galeriaDetallePrev');
+                                    const nextBtn = document.getElementById('galeriaDetalleNext');
+                                    function mostrarImagen(idx) {
+                                        if (!imagenes[idx]) return;
+                                        idxActual = idx;
+                                        modalImg.src = imagenes[idx].url;
+                                        modalImg.alt = imagenes[idx].alt;
+                                        let caption = '';
+                                        if(imagenes[idx].titulo) caption += '<h5>' + imagenes[idx].titulo + '</h5>';
+                                        if(imagenes[idx].descripcion) caption += '<div>' + imagenes[idx].descripcion + '</div>';
+                                        modalCaption.innerHTML = caption;
+                                    }
+                                    galeriaLinks.forEach(link => {
+                                        link.addEventListener('click', function(e) {
+                                            e.preventDefault();
+                                            const idx = parseInt(this.getAttribute('data-idx'));
+                                            mostrarImagen(idx);
+                                        });
+                                    });
+                                    prevBtn.addEventListener('click', function() {
+                                        let prev = idxActual - 1;
+                                        if (prev < 0) prev = imagenes.length - 1;
+                                        mostrarImagen(prev);
+                                    });
+                                    nextBtn.addEventListener('click', function() {
+                                        let next = idxActual + 1;
+                                        if (next >= imagenes.length) next = 0;
+                                        mostrarImagen(next);
+                                    });
+                                    document.getElementById('modalGaleriaDetalle').addEventListener('show.bs.modal', function() {
+                                        mostrarImagen(idxActual);
+                                    });
+                                });
+                            </script>
+                            @endpush
                         </div>
-                    </div>
-                    @push('scripts')
-                    <script>
-                        var modalImagen = document.getElementById('modalImagen');
-                        modalImagen.addEventListener('show.bs.modal', function (event) {
-                            var trigger = event.relatedTarget;
-                            var imgSrc = trigger.getAttribute('data-img');
-                            var imgAlt = trigger.getAttribute('data-alt');
-                            var modalImg = document.getElementById('modalImagenSrc');
-                            modalImg.src = imgSrc;
-                            modalImg.alt = imgAlt;
-                        });
-                    </script>
-                    @endpush
+                    </section>
                 @endif
             </div>
             

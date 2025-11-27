@@ -3,50 +3,7 @@
 @source '../../storage/framework/views/*.php';
 @source '../**/*.blade.php';
 @source '../**/*.js';
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
-}
- :root {
-            --brand-primary: #13213f;
-            --brand-secondary: #f9a826;
-            --brand-light: #f5f7fb;
-        }
 
-        body {
-            font-family: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background-color: var(--brand-light);
-            color: #1a1d2d;
-        }
-
-        .site-header {
-            background: linear-gradient(135deg, rgba(16, 23, 38, 0.95), rgba(25, 36, 60, 0.95));
-            color: #fff;
-        }
-
-        .site-header .navbar-brand {
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .site-header .navbar-brand span {
-            font-weight: 400;
-            text-transform: none;
-            letter-spacing: normal;
-        }
-
-        .site-header .nav-link {
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .site-header .dropdown-menu {
-            border-radius: 0.75rem;
-            border: none;
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-        }
 
         .hero-section {
             position: relative;
@@ -77,32 +34,7 @@
             flex-grow: 1;
         }
 
-        .footer {
-            background: #101726;
-            color: #d9deeb;
-        }
-
-        .footer a {
-            color: inherit;
-        }
-
-        .footer a:hover {
-            color: var(--brand-secondary);
-        }
-
-        .footer__divider {
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .btn-language {
-            border-radius: 999px;
-            border: 1px solid rgba(255, 255, 255, 0.4);
-        }
-
-        .dropdown-menu .active {
-            background-color: rgba(19, 33, 63, 0.08);
-            color: var(--brand-primary);
-        }
+  
 
         @media (max-width: 991px) {
             .site-header .navbar-collapse {
@@ -116,3 +48,7 @@ input,
 select,
 textarea {
   border-radius: 0;}
+
+body{
+    overflow-x: hidden;
+}

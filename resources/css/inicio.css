@@ -33,3 +33,4 @@
 .btn-link :hover{
         --bs-btn-color:var(--colornuntris);
 }
+.carousel-indicators button{background-color:var(--colornuntris)!important;}

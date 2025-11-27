@@ -1,4 +1,8 @@
+
 <?php
+// Página de contacto
+Route::get('/contacto', [\App\Http\Controllers\ContactoController::class, 'form'])->name('contacto.form');
+Route::post('/contacto', [\App\Http\Controllers\ContactoController::class, 'enviar'])->name('contacto.enviar');
 
 use App\Http\Controllers\WebController;
 use App\Http\Controllers\GalleryController;

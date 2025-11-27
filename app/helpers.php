@@ -1,4 +1,28 @@
 <?php
+if (!function_exists('normalizar_etiqueta_idioma')) {
+    /**
+     * Normaliza la etiqueta de idioma a su código base (ej: 'es-ES' => 'es', 'ast' => 'as').
+     * Si el idioma es compuesto (es-ES, en-US), devuelve la parte antes del guion.
+     * Si es un alias conocido, lo traduce; si no, lo deja tal cual.
+     */
+    function normalizar_etiqueta_idioma($idioma)
+    {
+        if (!$idioma) return 'es';
+        $idioma = strtolower($idioma);
+        // Quitar región si existe (ej: es-ES -> es)
+        $idioma = explode('-', $idioma)[0];
+        // Alias conocidos
+        $map = [
+            'castellano' => 'es',
+            'cas' => 'es',
+            'spanish' => 'es',
+            'asturiano' => 'as',
+            'ast' => 'as',
+        ];
+        return $map[$idioma] ?? $idioma;
+    }
+}
+
 
 use App\Services\ImageService;
 

@@ -1,6 +1,6 @@
 :root {
   --colornuntris: #f39d00;
-  --colorsecundario:#ea690b ;
+  --colorsecundario:#ea690b;
   --color-texto: #000000;
   --color-blanco: #ffffff;
   --tamano-fuente: 16px;
@@ -17,4 +17,4 @@ main{
 header nav{
     background-color: var(--colornuntris)
 }
-.nav-link {color:black}
+.nav-link {color: var(--color-blanco);}

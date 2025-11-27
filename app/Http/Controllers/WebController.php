@@ -170,9 +170,7 @@ class WebController extends Controller
         $idiomaNormalizado = normalizar_etiqueta_idioma($idioma) ?? 'es';
 
         $noticias = Content::noticias()
-                          ->with(['textos' => function($query) use ($idiomaNormalizado) {
-                              $query->byIdioma($idiomaNormalizado)->visible();
-                          }])
+                          ->with(['textos.idioma'])
                           ->orderBy('fecha_publicacion', 'desc')
                           ->paginate(10);
         

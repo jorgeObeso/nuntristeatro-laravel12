@@ -1,28 +1,16 @@
 @extends('layouts.app')
 
-@section('title', 'Noticias - ' . ($configuracion->nombre_empresa ?? 'Nuntris Teatro'))
+
 
 @section('content')
 <div class="container">
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>
-                    <i class="fas fa-newspaper text-primary"></i> 
-                    {{ app()->getLocale() == 'as' ? 'Noticies' : 'Noticias' }}
+                <h1>               
+                 {{ __('web.noticias') }}
                 </h1>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                            <a href="{{ route('inicio', app()->getLocale()) }}">
-                                {{ app()->getLocale() == 'as' ? 'Entamu' : 'Inicio' }}
-                            </a>
-                        </li>
-                        <li class="breadcrumb-item active" aria-current="page">
-                            {{ app()->getLocale() == 'as' ? 'Noticies' : 'Noticias' }}
-                        </li>
-                    </ol>
-                </nav>
+              
             </div>
         </div>
     </div>
@@ -30,11 +18,12 @@
     @if($noticias && $noticias->count() > 0)
         <div class="row">
             @foreach($noticias as $noticia)
-                @if($noticia->textos->count() > 0)
-                    @php
-                        $texto = $noticia->textos->where('idioma.codigo', app()->getLocale())->first();
-                    @endphp
-                    @if($texto)
+                               
+                
+                @php
+                    $texto = $noticia->textos->where('idioma.etiqueta', app()->getLocale())->first() ?? $noticia->textos->first();
+                @endphp
+                @if($texto)
                         <div class="col-md-6 col-lg-4 mb-4">
                             <div class="card news-card h-100">
                                 @if($noticia->imagen_portada)
@@ -65,7 +54,7 @@
                                     </div>
                                     
                                     @if($texto->resumen)
-                                        <p class="card-text flex-grow-1">{{ $texto->resumen }}</p>
+                                        {!! $texto->resumen !!}
                                     @elseif($texto->contenido)
                                         <p class="card-text flex-grow-1">
                                             {{ Str::limit(strip_tags($texto->contenido), 150) }}
@@ -73,17 +62,15 @@
                                     @endif
                                     
                                     <div class="mt-auto">
-                                        <a href="{{ route('contenido', [app()->getLocale(), $texto->slug]) }}" 
-                                           class="btn btn-primary btn-sm">
-                                            {{ app()->getLocale() == 'as' ? 'Lleer más' : 'Leer más' }}
-                                            <i class="fas fa-arrow-right ms-1"></i>
+                                        <a href="{{ route('contenido', [app()->getLocale(), $texto->slug]) }}">
+                                            {{ __('web.leer_mas') }}
                                         </a>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     @endif
-                @endif
+
             @endforeach
         </div>
         
@@ -100,14 +87,9 @@
                 <div class="card">
                     <div class="card-body text-center py-5">
                         <i class="fas fa-newspaper fa-3x text-muted mb-3"></i>
-                        <h3>{{ app()->getLocale() == 'as' ? 'Entá nun hai noticies' : 'Aún no hay noticias' }}</h3>
-                        <p class="text-muted">
-                            {{ app()->getLocale() == 'as' ? 'Tamos trabayando en nuevu conteníu. Vuelvi llueu pa ver les nueses últimes noticies.' : 'Estamos trabajando en nuevo contenido. Vuelve pronto para ver nuestras últimas noticias.' }}
-                        </p>
-                        <a href="{{ route('inicio', app()->getLocale()) }}" class="btn btn-primary">
-                            <i class="fas fa-home"></i> 
-                            {{ app()->getLocale() == 'as' ? 'Volver al entamu' : 'Volver al inicio' }}
-                        </a>
+                        <h4 class="fw-bold mb-3">{{ __('web.Próximamente') }}</h4>
+                        
+                        
                     </div>
                 </div>
             </div>
@@ -117,22 +99,5 @@
 @endsection
 
 @push('styles')
-<style>
-    .news-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border: none;
-    }
-    
-    .news-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-    }
-    
-    .breadcrumb {
-        background-color: transparent;
-        padding: 0;
-        margin: 0;
-    }
-</style>
+
 @endpush

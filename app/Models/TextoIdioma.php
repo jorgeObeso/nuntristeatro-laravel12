@@ -82,8 +82,10 @@ class TextoIdioma extends Model
      */
     public function scopeByIdioma($query, $codigoIdioma)
     {
-        return $query->whereHas('idioma', function ($q) use ($codigoIdioma) {
-            $q->where('etiqueta', $codigoIdioma);
+        // Permitir coincidencia flexible: solo la parte base del idioma, compatible con SQLite y MySQL
+        $codigoBase = explode('-', strtolower($codigoIdioma))[0];
+        return $query->whereHas('idioma', function ($q) use ($codigoBase) {
+            $q->whereRaw('(LOWER(etiqueta) = ? OR LOWER(etiqueta) LIKE ?)', [$codigoBase, $codigoBase . '-%']);
         });
     }
 

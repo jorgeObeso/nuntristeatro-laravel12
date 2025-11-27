@@ -256,11 +256,14 @@
     <style>
         .table td {
             vertical-align: middle;
+            white-space: normal
         }
         .btn-group .btn {
             margin-right: 2px;
         }
+
     </style>
+    
 @stop
 
 @section('js')
