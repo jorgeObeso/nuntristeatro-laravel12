@@ -12,11 +12,13 @@ class DynamicLocaleRouteProvider extends ServiceProvider
     {
         // Limitar el pattern dinámico SOLO a rutas públicas (no admin)
         // Usar un grupo para evitar afectar rutas admin que usan {idioma} como id
-        $etiquetas = Idioma::where('activo', true)->pluck('etiqueta')->toArray();
-        if (count($etiquetas) > 0) {
-            $pattern = implode('|', array_map('preg_quote', $etiquetas));
-            // Solo afecta a rutas que empiezan por /{idioma} (no /admin)
-            Route::pattern('idioma', $pattern);
+        if (\Schema::hasTable('idiomas')) {
+            $etiquetas = Idioma::where('activo', true)->pluck('etiqueta')->toArray();
+            if (count($etiquetas) > 0) {
+                $pattern = implode('|', array_map('preg_quote', $etiquetas));
+                // Solo afecta a rutas que empiezan por /{idioma} (no /admin)
+                Route::pattern('idioma', $pattern);
+            }
         }
     }
 }
