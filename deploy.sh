@@ -1,28 +1,31 @@
 #!/bin/bash
+set -e
 
 echo "=== Despliegue Laravel iniciado ==="
 
-# Instalar dependencias PHP
+echo "Instalando dependencias PHP (composer)..."
 composer install --no-dev --optimize-autoloader
 
-# Instalar dependencias JS y compilar assets
+echo "Instalando dependencias JS (npm)..."
 npm install
+
+echo "Compilando assets (npm run build)..."
 npm run build
 
-# Migrar base de datos (opcional, solo si necesitas migraciones)
+echo "Ejecutando migraciones (php artisan migrate --force)..."
 php artisan migrate --force
 
-# Limpiar y cachear configuración
+echo "Limpiando y cacheando configuración..."
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Generar clave de aplicación si no existe
 if ! grep -q "APP_KEY=" .env; then
+    echo "Generando clave de aplicación..."
     php artisan key:generate
 fi
 
-# Permisos para storage y cache
+echo "Ajustando permisos de storage y cache..."
 chmod -R 775 storage bootstrap/cache
 
 echo "=== Despliegue Laravel finalizado ==="
